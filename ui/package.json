@@ -1,0 +1,20 @@
+{
+  "name": "zkml-erc8004-ui",
+  "version": "1.0.0",
+  "description": "zkML News Oracle Dashboard - ERC-8004 Demo UI",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["zkml", "erc8004", "oracle", "trading"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.12.2",
+    "dotenv": "^17.2.3",
+    "ethers": "^6.15.0",
+    "express": "^5.1.0",
+    "rss-parser": "^3.13.0"
+  }
+}

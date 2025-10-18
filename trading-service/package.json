@@ -1,0 +1,15 @@
+{
+  "name": "zkml-auto-trader",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Automated trading service for zkML news classifications",
+  "main": "autoTrade.js",
+  "scripts": {
+    "start": "node autoTrade.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "ethers": "^6.8.0",
+    "winston": "^3.18.3"
+  }
+}

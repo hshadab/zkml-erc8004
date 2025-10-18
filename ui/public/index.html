@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>zkML News Oracle - ERC-8004 Demo</title>
+    <style>
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #131821;
+            --bg-tertiary: #1a1f2e;
+            --text-primary: #ffffff;
+            --text-secondary: #a0aec0;
+            --accent-blue: #5b8cff;
+            --accent-teal: #4de2cf;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-yellow: #fbbf24;
+            --border-color: #2d3748;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 24px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo {
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-teal));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .badge {
+            background: var(--bg-tertiary);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent-teal);
+            border: 1px solid var(--accent-teal);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 48px;
+            margin-bottom: 32px;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 48px;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, var(--text-primary), var(--accent-teal));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 20px;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+        }
+
+        .workflow {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-top: 32px;
+        }
+
+        .workflow-step {
+            background: var(--bg-primary);
+            padding: 16px 24px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            min-width: 150px;
+            position: relative;
+        }
+
+        .workflow-step.active {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 20px rgba(91, 140, 255, 0.3);
+        }
+
+        .workflow-step::after {
+            content: '→';
+            position: absolute;
+            right: -24px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 24px;
+        }
+
+        .workflow-step:last-child::after {
+            display: none;
+        }
+
+        .step-number {
+            font-size: 12px;
+            color: var(--accent-teal);
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .step-title {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .stat-value.good {
+            color: var(--accent-green);
+        }
+
+        .stat-value.bad {
+            color: var(--accent-red);
+        }
+
+        .stat-value.neutral {
+            color: var(--accent-yellow);
+        }
+
+        .stat-subtitle {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .dashboard-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .card-badge {
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .card-badge.oracle {
+            background: rgba(91, 140, 255, 0.2);
+            color: var(--accent-blue);
+        }
+
+        .card-badge.agent {
+            background: rgba(77, 226, 207, 0.2);
+            color: var(--accent-teal);
+        }
+
+        .card-badge.registry {
+            background: rgba(251, 191, 36, 0.2);
+            color: var(--accent-yellow);
+        }
+
+        /* Classification List */
+        .classification-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .classification-item {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            transition: all 0.2s;
+        }
+
+        .classification-item:hover {
+            border-color: var(--accent-blue);
+        }
+
+        .classification-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .classification-headline {
+            font-size: 14px;
+            font-weight: 600;
+            flex: 1;
+            margin-right: 16px;
+        }
+
+        .sentiment-badge {
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .sentiment-badge.good {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--accent-green);
+        }
+
+        .sentiment-badge.bad {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--accent-red);
+        }
+
+        .sentiment-badge.neutral {
+            background: rgba(251, 191, 36, 0.2);
+            color: var(--accent-yellow);
+        }
+
+        .classification-meta {
+            display: flex;
+            gap: 16px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .classification-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Trade List */
+        .trade-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .trade-item {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .trade-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .trade-action {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .trade-pnl {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .trade-pnl.positive {
+            color: var(--accent-green);
+        }
+
+        .trade-pnl.negative {
+            color: var(--accent-red);
+        }
+
+        .trade-pnl.pending {
+            color: var(--text-secondary);
+        }
+
+        .trade-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Registry Table */
+        .registry-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .registry-table th {
+            text-align: left;
+            padding: 12px;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-color);
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .registry-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+        }
+
+        .registry-table tr:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .reputation-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--bg-primary);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .reputation-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-red), var(--accent-yellow), var(--accent-green));
+            transition: width 0.3s;
+        }
+
+        /* Portfolio Card */
+        .portfolio-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .portfolio-item {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .portfolio-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .portfolio-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--accent-teal);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--accent-blue);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #4a7ae6;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(91, 140, 255, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent-teal);
+            transform: translateY(-2px);
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid transparent;
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .workflow {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .workflow-step::after {
+                content: '↓';
+                right: 50%;
+                top: auto;
+                bottom: -24px;
+                transform: translateX(50%);
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-blue);
+        }
+
+        /* Proof Hash */
+        .proof-hash {
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            color: var(--accent-teal);
+            word-break: break-all;
+        }
+
+        /* Transaction Links - Prevent overflow */
+        a[href*="basescan.org"] {
+            word-break: break-all;
+            overflow-wrap: break-word;
+            display: inline-block;
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="logo">zkML News Oracle</div>
+                <span class="badge">ERC-8004 Demo</span>
+            </div>
+            <div class="status-indicator">
+                <div class="status-dot"></div>
+                <span id="status-text">Live on Base Sepolia</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Hero Section -->
+        <section class="hero">
+            <h1>Verifiable AI News Classification</h1>
+            <p>zkML-powered sentiment analysis with on-chain proof verification and autonomous trading</p>
+
+            <div class="workflow">
+                <div class="workflow-step" id="step-1">
+                    <div class="step-number">STEP 1</div>
+                    <div class="step-title">Fetch News</div>
+                </div>
+                <div class="workflow-step" id="step-2">
+                    <div class="step-number">STEP 2</div>
+                    <div class="step-title">ML Classify</div>
+                </div>
+                <div class="workflow-step" id="step-3">
+                    <div class="step-number">STEP 3</div>
+                    <div class="step-title">Generate Proof</div>
+                </div>
+                <div class="workflow-step" id="step-4">
+                    <div class="step-number">STEP 4</div>
+                    <div class="step-title">Post On-Chain</div>
+                </div>
+                <div class="workflow-step" id="step-5">
+                    <div class="step-number">STEP 5</div>
+                    <div class="step-title">Agent Trades</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Latest Classification Highlight -->
+        <div class="dashboard-card" id="latest-classification-card" style="margin-bottom: 32px; display: none;">
+            <div class="card-header">
+                <h2 class="card-title">🎯 Latest zkML Classification</h2>
+                <span class="card-badge oracle">LIVE</span>
+            </div>
+            <div id="latest-classification-content">
+                <div class="empty-state">
+                    <div class="empty-state-icon">⌛</div>
+                    <p>Loading latest classification...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid" id="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Classifications</div>
+                <div class="stat-value" id="total-classifications">-</div>
+                <div class="stat-subtitle">All-time on Base Sepolia</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Oracle Reputation</div>
+                <div class="stat-value" id="oracle-reputation">-</div>
+                <div class="stat-subtitle">ERC-8004 Trust Score</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Trades</div>
+                <div class="stat-value" id="total-trades">-</div>
+                <div class="stat-subtitle">Autonomous executions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Win Rate</div>
+                <div class="stat-value good" id="win-rate">-</div>
+                <div class="stat-subtitle">10-second profitability</div>
+            </div>
+        </div>
+
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+            <!-- Oracle Dashboard -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h2 class="card-title">📰 News Classifications</h2>
+                    <span class="card-badge oracle">ORACLE</span>
+                </div>
+                <div class="classification-list" id="classification-list">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📊</div>
+                        <p>Loading classifications...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trading Agent Dashboard -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h2 class="card-title">💼 Agent Trades</h2>
+                    <span class="card-badge agent">AGENT</span>
+                </div>
+                <div class="trade-list" id="trade-list">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">💹</div>
+                        <p>Loading trades...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Portfolio and Registry -->
+        <div class="dashboard-grid">
+            <!-- Portfolio -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h2 class="card-title">💰 Agent Portfolio</h2>
+                    <span class="card-badge agent">LIVE</span>
+                </div>
+                <div class="portfolio-grid" id="portfolio-grid">
+                    <div class="portfolio-item">
+                        <div class="portfolio-label">WETH Balance</div>
+                        <div class="portfolio-value" id="weth-balance">-</div>
+                    </div>
+                    <div class="portfolio-item">
+                        <div class="portfolio-label">USDC Balance</div>
+                        <div class="portfolio-value" id="usdc-balance">-</div>
+                    </div>
+                    <div class="portfolio-item">
+                        <div class="portfolio-label">Total Value</div>
+                        <div class="portfolio-value" id="total-value">-</div>
+                    </div>
+                    <div class="portfolio-item">
+                        <div class="portfolio-label">P&L (24h)</div>
+                        <div class="portfolio-value" id="pnl-24h">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ERC-8004 Registry -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h2 class="card-title">🏛️ ERC-8004 Registry</h2>
+                    <span class="card-badge registry">REGISTRY</span>
+                </div>
+                <table class="registry-table">
+                    <thead>
+                        <tr>
+                            <th>Token ID</th>
+                            <th>Capability</th>
+                            <th>Reputation</th>
+                        </tr>
+                    </thead>
+                    <tbody id="registry-tbody">
+                        <tr>
+                            <td colspan="3">
+                                <div class="empty-state">
+                                    <div class="empty-state-icon">🔐</div>
+                                    <p>Loading registry...</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Contract Addresses -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h2 class="card-title">📋 Contract Addresses</h2>
+                <span class="card-badge registry">BASE SEPOLIA</span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
+                <div class="portfolio-item">
+                    <div class="portfolio-label">Registry</div>
+                    <div class="proof-hash" id="registry-address">0xC9a94a1168eB7ad8146f26B8F5dFcdC50d0Eb33E</div>
+                </div>
+                <div class="portfolio-item">
+                    <div class="portfolio-label">Oracle</div>
+                    <div class="proof-hash" id="oracle-address">0x07F3210C3C602c0a04B0B8672419E6D177ABbe4a</div>
+                </div>
+                <div class="portfolio-item">
+                    <div class="portfolio-label">Trading Agent</div>
+                    <div class="proof-hash" id="agent-address">0x16A8db57Adcf8Fa25DB3b41E03B6b2bc332a0E44</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API Base URL
+        const API_URL = 'http://localhost:3001';
+
+        // Auto-refresh interval (10 seconds)
+        const REFRESH_INTERVAL = 10000;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 zkML News Oracle UI initialized');
+            loadDashboard();
+            startAutoRefresh();
+        });
+
+        // Load all dashboard data
+        async function loadDashboard() {
+            try {
+                await Promise.all([
+                    loadStats(),
+                    loadLatestClassification(),
+                    loadClassifications(),
+                    loadTrades(),
+                    loadPortfolio(),
+                    loadRegistry()
+                ]);
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+            }
+        }
+
+        // Load latest classification
+        async function loadLatestClassification() {
+            try {
+                const response = await fetch(`${API_URL}/api/latest-classification`);
+                const data = await response.json();
+
+                const card = document.getElementById('latest-classification-card');
+                const contentEl = document.getElementById('latest-classification-content');
+
+                if (!data.classification) {
+                    card.style.display = 'none';
+                    return;
+                }
+
+                card.style.display = 'block';
+                const c = data.classification;
+                const zkmlBadge = c.isZkmlVerified
+                    ? '<span style="color: var(--accent-green); font-weight: 600; margin-left: 12px;">✓ zkML Verified</span>'
+                    : '<span style="color: var(--accent-yellow); font-weight: 600; margin-left: 12px;">⏳ Verification Pending</span>';
+
+                contentEl.innerHTML = `
+                    <div style="background: var(--bg-tertiary); border: 2px solid var(--accent-blue); border-radius: 12px; padding: 24px;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                            <div style="flex: 1;">
+                                <div style="font-size: 18px; font-weight: 700; margin-bottom: 8px; color: var(--text-primary);">
+                                    ${c.headline}
+                                    ${zkmlBadge}
+                                </div>
+                                <div style="display: flex; gap: 24px; flex-wrap: wrap; margin-top: 16px;">
+                                    <div>
+                                        <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 4px;">Sentiment</div>
+                                        <span class="sentiment-badge ${c.sentiment.toLowerCase()}" style="font-size: 14px; padding: 6px 16px;">${c.sentiment}</span>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 4px;">Confidence</div>
+                                        <div style="font-size: 18px; font-weight: 700; color: var(--accent-teal);">${c.confidence}%</div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 4px;">Oracle Token</div>
+                                        <div style="font-size: 18px; font-weight: 700;">#${c.oracleTokenId}</div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 4px;">Timestamp</div>
+                                        <div style="font-size: 14px;">${new Date(c.timestamp * 1000).toLocaleString()}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+                            <div style="background: var(--bg-primary); padding: 16px; border-radius: 8px;">
+                                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">🔐 Proof Hash</div>
+                                <div class="proof-hash" style="color: var(--accent-teal);">${c.proofHash}</div>
+                            </div>
+                            <div style="background: var(--bg-primary); padding: 16px; border-radius: 8px;">
+                                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">📝 Classification TX</div>
+                                <a href="${c.explorerUrl}" target="_blank" style="color: var(--accent-blue); text-decoration: none; font-family: 'Courier New', monospace; font-size: 12px; display: flex; align-items: center; gap: 6px;">
+                                    ${c.txHash}
+                                    <span style="font-size: 14px;">↗</span>
+                                </a>
+                            </div>
+                            ${c.verificationTxHash ? `
+                                <div style="background: var(--bg-primary); padding: 16px; border-radius: 8px;">
+                                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">✅ Verification TX</div>
+                                    <a href="${c.verificationExplorerUrl}" target="_blank" style="color: var(--accent-blue); text-decoration: none; font-family: 'Courier New', monospace; font-size: 12px; display: flex; align-items: center; gap: 6px;">
+                                        ${c.verificationTxHash}
+                                        <span style="font-size: 14px;">↗</span>
+                                    </a>
+                                </div>
+                            ` : ''}
+                        </div>
+
+                        <div style="margin-top: 16px; padding: 12px; background: rgba(91, 140, 255, 0.1); border-radius: 8px; border-left: 4px solid var(--accent-blue);">
+                            <div style="font-size: 12px; color: var(--text-secondary);">
+                                ℹ️ This classification was generated using <strong>real ONNX neural network</strong> inference, proven with <strong>JOLT zkML proof</strong> (~20s), wrapped in <strong>Groth16 zkSNARK</strong> (~1.5s), and verified on-chain at Base Sepolia.
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading latest classification:', error);
+                document.getElementById('latest-classification-card').style.display = 'none';
+            }
+        }
+
+        // Load statistics
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_URL}/api/stats`);
+                const data = await response.json();
+
+                document.getElementById('total-classifications').textContent = data.totalClassifications || '0';
+                document.getElementById('oracle-reputation').textContent = `${data.oracleReputation || '0'}/1000`;
+                document.getElementById('total-trades').textContent = data.totalTrades || '0';
+                document.getElementById('win-rate').textContent = `${data.winRate || '0'}%`;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Load classifications
+        async function loadClassifications() {
+            try {
+                const response = await fetch(`${API_URL}/api/classifications`);
+                const data = await response.json();
+
+                const listEl = document.getElementById('classification-list');
+
+                if (!data.classifications || data.classifications.length === 0) {
+                    listEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📊</div><p>No classifications yet</p></div>';
+                    return;
+                }
+
+                listEl.innerHTML = data.classifications.map(c => {
+                    const zkmlBadge = c.isZkmlVerified
+                        ? '<span style="color: var(--accent-green); font-size: 11px; margin-left: 8px;">✓ zkML</span>'
+                        : '';
+
+                    return `
+                    <div class="classification-item">
+                        <div class="classification-header">
+                            <div class="classification-headline">${c.headline}${zkmlBadge}</div>
+                            <span class="sentiment-badge ${c.sentiment.toLowerCase()}">${c.sentiment}</span>
+                        </div>
+                        <div class="classification-meta">
+                            <span>📊 Confidence: ${c.confidence}%</span>
+                            <span>🔐 Proof: ${c.proofHash.slice(0, 10)}...</span>
+                            <span>⏰ ${new Date(c.timestamp * 1000).toLocaleString()}</span>
+                        </div>
+                        <div style="margin-top: 8px;">
+                            <a href="${c.explorerUrl}" target="_blank" style="color: var(--accent-blue); text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                                🔗 View on BaseScan
+                                <span style="font-family: 'Courier New', monospace;">${c.txHash ? c.txHash.slice(0, 10) + '...' : ''}</span>
+                            </a>
+                        </div>
+                    </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading classifications:', error);
+            }
+        }
+
+        // Load trades
+        async function loadTrades() {
+            try {
+                const response = await fetch(`${API_URL}/api/trades`);
+                const data = await response.json();
+
+                const listEl = document.getElementById('trade-list');
+
+                if (!data.trades || data.trades.length === 0) {
+                    listEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💹</div><p>No trades yet</p></div>';
+                    return;
+                }
+
+                listEl.innerHTML = data.trades.map(t => {
+                    const pnlClass = t.isProfitable ? 'positive' : (t.portfolioValueAfter > 0 ? 'negative' : 'pending');
+                    const pnlText = t.portfolioValueAfter > 0
+                        ? (t.isProfitable ? `+${t.profitPercent}%` : `${t.profitPercent}%`)
+                        : 'Pending';
+
+                    return `
+                        <div class="trade-item">
+                            <div class="trade-header">
+                                <div class="trade-action">${t.action}</div>
+                                <div class="trade-pnl ${pnlClass}">${pnlText}</div>
+                            </div>
+                            <div class="trade-details">
+                                <div>Amount In: ${t.amountIn}</div>
+                                <div>Amount Out: ${t.amountOut}</div>
+                                <div>Sentiment: ${t.sentiment}</div>
+                                <div>Time: ${new Date(t.timestamp * 1000).toLocaleString()}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading trades:', error);
+            }
+        }
+
+        // Load portfolio
+        async function loadPortfolio() {
+            try {
+                const response = await fetch(`${API_URL}/api/portfolio`);
+                const data = await response.json();
+
+                document.getElementById('weth-balance').textContent = `${data.wethBalance || '0'} WETH`;
+                document.getElementById('usdc-balance').textContent = `${data.usdcBalance || '0'} USDC`;
+                document.getElementById('total-value').textContent = `$${data.totalValue || '0'}`;
+                document.getElementById('pnl-24h').textContent = data.pnl24h ? `${data.pnl24h > 0 ? '+' : ''}${data.pnl24h}%` : '-';
+            } catch (error) {
+                console.error('Error loading portfolio:', error);
+            }
+        }
+
+        // Load registry
+        async function loadRegistry() {
+            try {
+                const response = await fetch(`${API_URL}/api/registry`);
+                const data = await response.json();
+
+                const tbody = document.getElementById('registry-tbody');
+
+                if (!data.agents || data.agents.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3"><div class="empty-state"><div class="empty-state-icon">🔐</div><p>No agents registered</p></div></td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.agents.map(a => `
+                    <tr>
+                        <td>#${a.tokenId}</td>
+                        <td>${a.capability}</td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <span>${a.reputation}/1000</span>
+                                <div class="reputation-bar" style="flex: 1;">
+                                    <div class="reputation-fill" style="width: ${(a.reputation / 1000) * 100}%"></div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading registry:', error);
+            }
+        }
+
+        // Start auto-refresh
+        function startAutoRefresh() {
+            setInterval(loadDashboard, REFRESH_INTERVAL);
+        }
+
+        // Animate workflow steps
+        function animateWorkflow() {
+            const steps = ['step-1', 'step-2', 'step-3', 'step-4', 'step-5'];
+            let currentStep = 0;
+
+            setInterval(() => {
+                steps.forEach(id => document.getElementById(id).classList.remove('active'));
+                document.getElementById(steps[currentStep]).classList.add('active');
+                currentStep = (currentStep + 1) % steps.length;
+            }, 2000);
+        }
+
+        animateWorkflow();
+    </script>
+</body>
+</html>
