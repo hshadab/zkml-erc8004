@@ -714,6 +714,12 @@
                     <h2 class="card-title">💰 Agent Portfolio</h2>
                     <span class="card-badge agent">LIVE</span>
                 </div>
+                <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-tertiary); border-radius: 8px; border: 1px solid var(--border-color);">
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">💼 Agent Wallet Address</div>
+                    <a href="https://polygonscan.com/address/0x2e091b211a0d2a7428c83909b3293c42f2af9e1b" target="_blank" style="text-decoration: none;">
+                        <div class="proof-hash" style="color: var(--accent-blue); cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--accent-teal)'" onmouseout="this.style.color='var(--accent-blue)'">0x2e091b211a0d2a7428c83909b3293c42f2af9e1b</div>
+                    </a>
+                </div>
                 <div class="portfolio-grid" id="portfolio-grid">
                     <div class="portfolio-item">
                         <div class="portfolio-label">MATIC Balance</div>
@@ -770,16 +776,34 @@
             </div>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
                 <div class="portfolio-item">
-                    <div class="portfolio-label">Registry</div>
-                    <div class="proof-hash" id="registry-address">0xC9a94a1168eB7ad8146f26B8F5dFcdC50d0Eb33E</div>
+                    <div class="portfolio-label">🏛️ Registry</div>
+                    <a href="https://polygonscan.com/address/0x078C7aFbFADAC9BE82F372e867231d605A8d3428" target="_blank" style="text-decoration: none;">
+                        <div class="proof-hash" id="registry-address" style="color: var(--accent-blue); cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--accent-teal)'" onmouseout="this.style.color='var(--accent-blue)'">0x078C7aFbFADAC9BE82F372e867231d605A8d3428</div>
+                    </a>
                 </div>
                 <div class="portfolio-item">
-                    <div class="portfolio-label">Oracle</div>
-                    <div class="proof-hash" id="oracle-address">0x07F3210C3C602c0a04B0B8672419E6D177ABbe4a</div>
+                    <div class="portfolio-label">📰 News Oracle</div>
+                    <a href="https://polygonscan.com/address/0x037B74A3c354522312C67a095D043347E9Ffc40f" target="_blank" style="text-decoration: none;">
+                        <div class="proof-hash" id="oracle-address" style="color: var(--accent-blue); cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--accent-teal)'" onmouseout="this.style.color='var(--accent-blue)'">0x037B74A3c354522312C67a095D043347E9Ffc40f</div>
+                    </a>
                 </div>
                 <div class="portfolio-item">
-                    <div class="portfolio-label">Trading Agent</div>
-                    <div class="proof-hash" id="agent-address">0x16A8db57Adcf8Fa25DB3b41E03B6b2bc332a0E44</div>
+                    <div class="portfolio-label">💼 Trading Agent</div>
+                    <a href="https://polygonscan.com/address/0x2e091b211a0d2a7428c83909b3293c42f2af9e1b" target="_blank" style="text-decoration: none;">
+                        <div class="proof-hash" id="agent-address" style="color: var(--accent-blue); cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--accent-teal)'" onmouseout="this.style.color='var(--accent-blue)'">0x2e091b211a0d2a7428c83909b3293c42f2af9e1b</div>
+                    </a>
+                </div>
+                <div class="portfolio-item">
+                    <div class="portfolio-label">🔐 Groth16 Verifier</div>
+                    <a href="https://polygonscan.com/address/0x1096Db6A1e762eA475A0eac5D6782e4653Cc4a7D" target="_blank" style="text-decoration: none;">
+                        <div class="proof-hash" style="color: var(--accent-blue); cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--accent-teal)'" onmouseout="this.style.color='var(--accent-blue)'">0x1096Db6A1e762eA475A0eac5D6782e4653Cc4a7D</div>
+                    </a>
+                </div>
+                <div class="portfolio-item">
+                    <div class="portfolio-label">✅ News Verifier</div>
+                    <a href="https://polygonscan.com/address/0x05d1A031CC20424644445925D5e5E3Fc5de27E37" target="_blank" style="text-decoration: none;">
+                        <div class="proof-hash" style="color: var(--accent-blue); cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--accent-teal)'" onmouseout="this.style.color='var(--accent-blue)'">0x05d1A031CC20424644445925D5e5E3Fc5de27E37</div>
+                    </a>
                 </div>
             </div>
         </div>
@@ -989,6 +1013,14 @@
                                 <div>Sentiment: ${t.sentiment}</div>
                                 <div>Time: ${new Date(t.timestamp * 1000).toLocaleString()}</div>
                             </div>
+                            ${t.txHash ? `
+                                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color);">
+                                    <a href="${t.explorerUrl}" target="_blank" style="color: var(--accent-blue); text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                                        🔗 View Trade on PolygonScan
+                                        <span style="font-family: 'Courier New', monospace;">${t.txHash.slice(0, 10)}...</span>
+                                    </a>
+                                </div>
+                            ` : ''}
                         </div>
                     `;
                 }).join('');
@@ -1027,7 +1059,11 @@
 
                 tbody.innerHTML = data.agents.map(a => `
                     <tr>
-                        <td>#${a.tokenId}</td>
+                        <td>
+                            <a href="https://polygonscan.com/token/0x078C7aFbFADAC9BE82F372e867231d605A8d3428?a=${a.tokenId}" target="_blank" style="color: var(--accent-blue); text-decoration: none; font-weight: 600;" onmouseover="this.style.color='var(--accent-teal)'" onmouseout="this.style.color='var(--accent-blue)'">
+                                #${a.tokenId}
+                            </a>
+                        </td>
                         <td>${a.capability}</td>
                         <td>
                             <div style="display: flex; align-items: center; gap: 12px;">

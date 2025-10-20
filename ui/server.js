@@ -254,25 +254,25 @@ app.get('/api/classifications', async (req, res) => {
     }
 });
 
-// Get recent trades (TradingAgent doesn't emit events, so we fetch from contract state)
+// Get recent trades with transaction hashes from TradeExecuted events
 app.get('/api/trades', async (req, res) => {
     try {
         const result = await retryWithBackoff(async () => {
-            // Get total number of classifications
-            const classificationCount = await oracleContract.getClassificationCount();
-            const count = Number(classificationCount);
+            // Get TradeExecuted events
+            const latestBlock = await provider.getBlockNumber();
+            const fromBlock = Math.max(0, latestBlock - 49000); // Last ~49k blocks (RPC limit is 50k)
 
-            // Fetch last 10 trades by iterating through classifications
-            const trades = [];
-            const limit = Math.min(count, 20); // Check last 20 classifications for trades
+            const tradeFilter = agentContract.filters.TradeExecuted();
+            const tradeEvents = await agentContract.queryFilter(tradeFilter, fromBlock, latestBlock);
 
-            for (let i = count - 1; i >= Math.max(0, count - limit); i--) {
-                try {
-                    const classificationId = await oracleContract.getClassificationIdByIndex(i);
-                    const trade = await agentContract.getTradeDetails(classificationId);
+            // Fetch details for each trade
+            const trades = await Promise.all(
+                tradeEvents.slice(-10).reverse().map(async (event) => {
+                    try {
+                        const classificationId = event.args[0];
+                        const trade = await agentContract.getTradeDetails(classificationId);
+                        const txHash = event.transactionHash;
 
-                    // Only include if trade was actually executed (has an action and timestamp)
-                    if (trade.timestamp > 0n && trade.action && trade.action !== "") {
                         // Calculate profit percentage
                         let profitPercent = 0;
                         if (trade.portfolioValueAfter > 0n && trade.portfolioValueBefore > 0n) {
@@ -280,7 +280,7 @@ app.get('/api/trades', async (req, res) => {
                             profitPercent = Number((diff * 10000n) / trade.portfolioValueBefore) / 100;
                         }
 
-                        trades.push({
+                        return {
                             classificationId: trade.classificationId,
                             oracleTokenId: trade.oracleTokenId.toString(),
                             sentiment: sentimentToString(trade.sentiment),
@@ -291,20 +291,19 @@ app.get('/api/trades', async (req, res) => {
                             portfolioValueBefore: formatUsdc(trade.portfolioValueBefore),
                             portfolioValueAfter: trade.portfolioValueAfter > 0n ? formatUsdc(trade.portfolioValueAfter) : '0',
                             isProfitable: trade.isProfitable,
-                            profitPercent: profitPercent.toFixed(2)
-                        });
-
-                        // Stop if we have 10 trades
-                        if (trades.length >= 10) break;
+                            profitPercent: profitPercent.toFixed(2),
+                            txHash: txHash,
+                            explorerUrl: `https://polygonscan.com/tx/${txHash}`
+                        };
+                    } catch (err) {
+                        console.error('Error fetching trade details:', err);
+                        return null;
                     }
-                } catch (err) {
-                    // Classification might not have a trade, continue
-                    continue;
-                }
-            }
+                })
+            );
 
             return {
-                trades: trades
+                trades: trades.filter(t => t !== null)
             };
         });
 
