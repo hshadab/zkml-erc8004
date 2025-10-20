@@ -583,7 +583,7 @@
         }
 
         /* Transaction Links - Prevent overflow */
-        a[href*="basescan.org"] {
+        a[href*="polygonscan.com"] {
             word-break: break-all;
             overflow-wrap: break-word;
             display: inline-block;
@@ -601,7 +601,7 @@
             </div>
             <div class="status-indicator">
                 <div class="status-dot"></div>
-                <span id="status-text">Live on Base Sepolia</span>
+                <span id="status-text">Live on Polygon PoS</span>
             </div>
         </div>
     </header>
@@ -656,7 +656,7 @@
             <div class="stat-card">
                 <div class="stat-label">Total Classifications</div>
                 <div class="stat-value" id="total-classifications">-</div>
-                <div class="stat-subtitle">All-time on Base Sepolia</div>
+                <div class="stat-subtitle">All-time on Polygon</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">Oracle Reputation</div>
@@ -716,7 +716,7 @@
                 </div>
                 <div class="portfolio-grid" id="portfolio-grid">
                     <div class="portfolio-item">
-                        <div class="portfolio-label">WETH Balance</div>
+                        <div class="portfolio-label">MATIC Balance</div>
                         <div class="portfolio-value" id="weth-balance">-</div>
                     </div>
                     <div class="portfolio-item">
@@ -766,7 +766,7 @@
         <div class="dashboard-card">
             <div class="card-header">
                 <h2 class="card-title">📋 Contract Addresses</h2>
-                <span class="card-badge registry">BASE SEPOLIA</span>
+                <span class="card-badge registry">POLYGON</span>
             </div>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
                 <div class="portfolio-item">
@@ -889,7 +889,7 @@
 
                         <div style="margin-top: 16px; padding: 12px; background: rgba(91, 140, 255, 0.1); border-radius: 8px; border-left: 4px solid var(--accent-blue);">
                             <div style="font-size: 12px; color: var(--text-secondary);">
-                                ℹ️ This classification was generated using <strong>real ONNX neural network</strong> inference, proven with <strong>JOLT zkML proof</strong> (~20s), wrapped in <strong>Groth16 zkSNARK</strong> (~1.5s), and verified on-chain at Base Sepolia.
+                                ℹ️ This classification was generated using <strong>real ONNX neural network</strong> inference, proven with <strong>JOLT zkML proof</strong> (~20s), wrapped in <strong>Groth16 zkSNARK</strong> (~1.5s), and verified on-chain at Polygon PoS Mainnet.
                             </div>
                         </div>
                     </div>
@@ -946,7 +946,7 @@
                         </div>
                         <div style="margin-top: 8px;">
                             <a href="${c.explorerUrl}" target="_blank" style="color: var(--accent-blue); text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
-                                🔗 View on BaseScan
+                                🔗 View on PolygonScan
                                 <span style="font-family: 'Courier New', monospace;">${c.txHash ? c.txHash.slice(0, 10) + '...' : ''}</span>
                             </a>
                         </div>
@@ -1003,7 +1003,7 @@
                 const response = await fetch(`${API_URL}/api/portfolio`);
                 const data = await response.json();
 
-                document.getElementById('weth-balance').textContent = `${data.wethBalance || '0'} WETH`;
+                document.getElementById('weth-balance').textContent = `${data.wethBalance || '0'} MATIC`;
                 document.getElementById('usdc-balance').textContent = `${data.usdcBalance || '0'} USDC`;
                 document.getElementById('total-value').textContent = `$${data.totalValue || '0'}`;
                 document.getElementById('pnl-24h').textContent = data.pnl24h ? `${data.pnl24h > 0 ? '+' : ''}${data.pnl24h}%` : '-';

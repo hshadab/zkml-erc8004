@@ -104,7 +104,7 @@ export class JoltOnnxProver {
 
     // Extract output (boolean tensor [1, 1])
     const output = results.label_bool.data[0];
-    const sentiment = output ? 2 : 1; // Map to our sentiment enum: 2=GOOD, 1=BAD
+    const sentiment = output ? 2 : 0; // Map to INewsOracle enum: 0=BAD_NEWS, 2=GOOD_NEWS
 
     logger.info(`   Inference: ${inferenceTime}ms → sentiment=${sentiment} (raw=${output})`);
 

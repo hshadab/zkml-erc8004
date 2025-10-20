@@ -24,10 +24,10 @@ const AGENT_ADDRESS = process.env.TRADING_AGENT_ADDRESS || '0x16A8db57Adcf8Fa25D
 
 // Multiple RPC endpoints for fallback (in priority order)
 const RPC_URLS = [
-    process.env.BASE_SEPOLIA_RPC_URL || 'https://base-sepolia-rpc.publicnode.com',
-    'https://sepolia.base.org',
-    'https://base-sepolia.g.alchemy.com/v2/demo',
-    'https://84532.rpc.thirdweb.com'
+    process.env.POLYGON_RPC_URL || 'https://polygon-rpc.com',
+    'https://polygon.llamarpc.com',
+    'https://rpc-mainnet.maticvigil.com',
+    'https://polygon-mainnet.public.blastapi.io'
 ];
 
 // Initialize provider with timeout configuration
@@ -232,7 +232,7 @@ app.get('/api/classifications', async (req, res) => {
                             timestamp: classification.timestamp.toString(),
                             oracleTokenId: classification.oracleTokenId.toString(),
                             txHash: txHash,
-                            explorerUrl: `https://sepolia.basescan.org/tx/${txHash}`,
+                            explorerUrl: `https://polygonscan.com/tx/${txHash}`,
                             isZkmlVerified: isZkmlVerified
                         };
                     } catch (err) {
@@ -429,9 +429,9 @@ app.get('/api/latest-classification', async (req, res) => {
                     timestamp: classification.timestamp.toString(),
                     oracleTokenId: classification.oracleTokenId.toString(),
                     txHash: '0x0296f0a3a2b14984a2f787bf53078a9368df61822be6314a02a926b7b5725008',
-                    explorerUrl: 'https://sepolia.basescan.org/tx/0x0296f0a3a2b14984a2f787bf53078a9368df61822be6314a02a926b7b5725008',
+                    explorerUrl: 'https://polygonscan.com/tx/0x0296f0a3a2b14984a2f787bf53078a9368df61822be6314a02a926b7b5725008',
                     verificationTxHash: '0xba35a2aca1dd6046582b761ee37565bff98da3938dd1a8f8044f5cf96fe3e6ce',
-                    verificationExplorerUrl: 'https://sepolia.basescan.org/tx/0xba35a2aca1dd6046582b761ee37565bff98da3938dd1a8f8044f5cf96fe3e6ce',
+                    verificationExplorerUrl: 'https://polygonscan.com/tx/0xba35a2aca1dd6046582b761ee37565bff98da3938dd1a8f8044f5cf96fe3e6ce',
                     isZkmlVerified: isZkmlVerified
                 }
             };
