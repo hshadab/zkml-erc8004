@@ -1,5 +1,20 @@
 # Changelog
 
+## 2025-10-20 - Trade Profitability Evaluation Fix
+
+### Fixed
+- **Trade Display**: Fixed UI showing all trades as "Pending" even after successful execution
+  - Root cause: `evaluateTradeProfitability()` was not being called after trades
+  - Solution: Added automatic evaluation 11 seconds post-trade in `polygonTrader.js:161-174`
+  - Impact: Future trades will now correctly display profitability and portfolio values in UI
+
+### Technical Details
+**Issue**: Smart contract requires calling `evaluateTradeProfitability(classificationId)` 10+ seconds after trade execution to update `portfolioValueAfter`. UI determines "Pending" vs completed status based on this value, not transaction hash.
+
+**Solution**: Added asynchronous setTimeout callback to call evaluation function after trades complete. This updates the on-chain trade record with calculated portfolio value and profitability status.
+
+---
+
 ## 2025-10-20 - QuickSwap V2 Integration Fix
 
 ### Fixed

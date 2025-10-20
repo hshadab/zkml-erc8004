@@ -158,6 +158,21 @@ export class PolygonTrader {
       logger.info(`  ✅ TRADE COMPLETE`);
       logger.info(`════════════════════════════════════════════════════════════\n`);
 
+      // Schedule trade profitability evaluation (asynchronous, non-blocking)
+      setTimeout(async () => {
+        try {
+          logger.info(`⏱️  Evaluating trade profitability (10s post-trade)...`);
+          const evalTx = await this.agent.evaluateTradeProfitability(classificationId, {
+            gasLimit: 500000
+          });
+          logger.info(`   📝 Evaluation TX: ${evalTx.hash}`);
+          const evalReceipt = await evalTx.wait();
+          logger.info(`   ✅ Trade profitability evaluated! Gas used: ${evalReceipt.gasUsed}`);
+        } catch (error) {
+          logger.error(`   ❌ Failed to evaluate trade profitability: ${error.message}`);
+        }
+      }, 11000); // Wait 11 seconds (contract requires minimum 10s)
+
       return {
         txHash: tx.hash,
         gasUsed: (receipt.gasUsed || 0n).toString(),
