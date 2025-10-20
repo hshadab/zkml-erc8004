@@ -42,15 +42,28 @@ export class PolygonClassifier {
     logger.info(`\n🔐 Generating zkML classification for: "${headline}"`);
 
     // Generate JOLT proof + Groth16 wrapper
-    const result = await this.zkmlClassifier.classifyWithProof(headline);
+    const result = await this.zkmlClassifier.classify({ headline });
+
+    if (!result.success) {
+      throw new Error(result.reason || result.error || 'Classification failed');
+    }
 
     logger.info(`✅ zkML Classification generated:`);
     logger.info(`   Sentiment: ${result.sentiment === 1 ? 'BULLISH' : 'BEARISH'}`);
     logger.info(`   Confidence: ${result.confidence}%`);
-    logger.info(`   JOLT Proof: ${result.joltProofTime}ms`);
-    logger.info(`   Groth16 Wrapper: ${result.groth16Time}ms`);
+    logger.info(`   JOLT Proof: ${result.timingMs.jolt}ms`);
+    logger.info(`   Groth16 Wrapper: ${result.timingMs.groth16}ms`);
 
-    return result;
+    return {
+      sentiment: result.sentiment,
+      confidence: result.confidence,
+      proof: {
+        fullProof: result.proofBytes,
+        proofHash: result.proofHash
+      },
+      joltProofTime: result.timingMs.jolt,
+      groth16Time: result.timingMs.groth16
+    };
   }
 
   /**
