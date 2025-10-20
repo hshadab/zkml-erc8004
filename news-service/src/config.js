@@ -6,10 +6,11 @@ dotenv.config();
  */
 export const config = {
   // Blockchain
-  rpcUrl: process.env.BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org',
+  rpcUrl: process.env.POLYGON_RPC_URL || 'https://polygon-rpc.com',
   oraclePrivateKey: process.env.ORACLE_PRIVATE_KEY,
-  newsOracleAddress: process.env.NEWS_ORACLE_CONTRACT_ADDRESS,
-  registryAddress: process.env.VERIFICATION_REGISTRY_ADDRESS,
+  // Prefer Polygon envs; fall back to legacy names if present
+  newsOracleAddress: process.env.POLYGON_ORACLE || process.env.NEWS_ORACLE_CONTRACT_ADDRESS,
+  registryAddress: process.env.POLYGON_REGISTRY || process.env.VERIFICATION_REGISTRY_ADDRESS,
 
   // News sources
   coinDeskRssUrl: process.env.COINDESK_RSS_URL || 'https://www.coindesk.com/arc/outboundfeeds/rss/',
@@ -39,7 +40,8 @@ export function validateConfig() {
     'registryAddress'
   ];
 
-  const missing = required.filter(key => !config[key.replace(/([A-Z])/g, '_$1').toLowerCase()]);
+  // Check actual keys on config (Polygon-first)
+  const missing = required.filter(key => !config[key]);
 
   if (missing.length > 0) {
     console.warn('⚠️  Warning: Missing required configuration:', missing.join(', '));

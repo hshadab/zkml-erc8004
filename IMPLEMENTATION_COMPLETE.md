@@ -2,6 +2,8 @@
 
 **Date**: 2025-10-17
 **Status**: Production-Ready
+Archived note: This document reflects the earlier Base Sepolia workflow. The active target network is Polygon PoS — see POLYGON_README.md for the canonical guide.
+
 **Network**: Base Sepolia (Testnet)
 **Your GitHub**: https://github.com/hshadab/
 

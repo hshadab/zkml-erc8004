@@ -1,5 +1,7 @@
 # Phase 1 Complete! 🎉
 
+Archived note: This document reflects the earlier Base Sepolia workflow. The active target network is Polygon PoS — see POLYGON_README.md for the canonical guide.
+
 ## What We've Built
 
 Congratulations! We've completed **Phase 1** of the zkML-ERC8004 demo with all 10/10 improvements implemented.

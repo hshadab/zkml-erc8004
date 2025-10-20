@@ -5,6 +5,7 @@ import { NewsFetcher } from './fetcher.js';
 import { NewsClassifier } from './classifier.js';
 import { OraclePoster } from './poster.js';
 import { logger } from './logger.js';
+import { PolygonTrader } from './polygonTrader.js';
 import { config, validateConfig } from './config.js';
 import { mkdir } from 'fs/promises';
 
@@ -104,6 +105,18 @@ class NewsService {
           if (result.success) {
             posted++;
             logger.info(`\n✅ Successfully posted classification ${posted}/${newsItems.length}\n`);
+
+            // Auto-trigger trade on Polygon if enabled
+            if (process.env.ENABLE_AUTO_TRADE === 'true' && result.classificationId) {
+              try {
+                logger.info('🤖 Auto-trading enabled: triggering TradingAgent.reactToNews()');
+                const trader = new PolygonTrader();
+                await trader.initialize();
+                await trader.executeTrade(result.classificationId);
+              } catch (tradeErr) {
+                logger.warn(`⚠️  Auto-trade failed: ${tradeErr.message}`);
+              }
+            }
           }
         } else {
           logger.info('(Test mode - not posting to blockchain)');

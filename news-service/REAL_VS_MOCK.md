@@ -1,5 +1,7 @@
 # zkML News Oracle - Real vs Mock Implementation Status
 
+Note: References to Base Sepolia here are historical; the active network is Polygon PoS. See POLYGON_README.md for current usage.
+
 ## ✅ What's REAL Now (No Mocks or Simulations)
 
 ### 1. Smart Contracts - 100% REAL ✓

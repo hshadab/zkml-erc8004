@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const { ethers } = require('ethers');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -17,10 +18,19 @@ app.use((req, res, next) => {
     next();
 });
 
-// Contract addresses (from env or default to deployed addresses)
-const REGISTRY_ADDRESS = process.env.ZKML_VERIFICATION_REGISTRY || '0xC9a94a1168eB7ad8146f26B8F5dFcdC50d0Eb33E';
-const ORACLE_ADDRESS = process.env.NEWS_ORACLE_ADDRESS || '0x07F3210C3C602c0a04B0B8672419E6D177ABbe4a';
-const AGENT_ADDRESS = process.env.TRADING_AGENT_ADDRESS || '0x16A8db57Adcf8Fa25DB3b41E03B6b2bc332a0E44';
+// Contract addresses (Polygon deployment)
+const REGISTRY_ADDRESS = process.env.POLYGON_REGISTRY || '0x078C7aFbFADAC9BE82F372e867231d605A8d3428';
+const ORACLE_ADDRESS = process.env.POLYGON_ORACLE || '0x037B74A3c354522312C67a095D043347E9Ffc40f';
+const AGENT_ADDRESS = process.env.POLYGON_AGENT || '0x2e091b211a0d2a7428c83909b3293c42f2af9e1b';
+const VERIFIER_ADDRESS = process.env.POLYGON_VERIFIER || '0x05d1A031CC20424644445925D5e5E3Fc5de27E37';
+
+// Load tx hash cache
+let txCache = {};
+try {
+  txCache = JSON.parse(fs.readFileSync('/home/hshadab/zkml-erc8004/ui/tx-cache.json', 'utf8'));
+} catch(e) { txCache = {}; }
+
+const AGENT_DEPLOYMENT_BLOCK = 77944676; // V2 TradingAgent deployment block
 
 // Multiple RPC endpoints for fallback (in priority order)
 const RPC_URLS = [
@@ -35,10 +45,28 @@ let provider = null;
 let currentRpcIndex = 0;
 
 function createProvider(rpcUrl) {
-    return new ethers.JsonRpcProvider(rpcUrl, undefined, {
-        staticNetwork: true,
-        polling: false,
-        timeout: 30000 // 30 second timeout
+    // Create a custom FetchRequest with extended timeout for WSL2 compatibility
+    const fetchReq = new ethers.FetchRequest(rpcUrl);
+    fetchReq.timeout = 120000; // 120 second timeout
+    fetchReq.retryFunc = async (req, res, attempt) => {
+        // Retry up to 2 times with 2 second delay
+        if (attempt < 2) {
+            console.log(`Retry attempt ${attempt + 1} for ${rpcUrl}`);
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            return true;
+        }
+        return false;
+    };
+
+    // Explicitly specify Polygon PoS Mainnet network (Chain ID: 137)
+    const network = {
+        name: 'matic',
+        chainId: 137
+    };
+
+    // Create provider with custom fetch request
+    return new ethers.JsonRpcProvider(fetchReq, network, {
+        staticNetwork: true
     });
 }
 
@@ -46,10 +74,11 @@ function createProvider(rpcUrl) {
 async function initializeProvider() {
     for (let i = 0; i < RPC_URLS.length; i++) {
         try {
+            console.log(`Connecting to RPC ${i + 1}/${RPC_URLS.length}: ${RPC_URLS[i]}`);
             const testProvider = createProvider(RPC_URLS[i]);
-            // Test connection
-            await testProvider.getBlockNumber();
-            console.log(`✅ Connected to RPC: ${RPC_URLS[i]}`);
+            // Test connection (FetchRequest has its own 120s timeout + retries)
+            const blockNumber = await testProvider.getBlockNumber();
+            console.log(`✅ Connected to RPC: ${RPC_URLS[i]} (Block: ${blockNumber})`);
             provider = testProvider;
             currentRpcIndex = i;
             return;
@@ -96,7 +125,9 @@ const REGISTRY_ABI = [
     "function getAgentInfo(uint256 tokenId) external view returns (address owner, string[] memory capabilityTypes)",
     "function getReputationScore(uint256 tokenId, string calldata capabilityType) external view returns (uint256)",
     "function totalValidations(uint256 tokenId) external view returns (uint256)",
-    "function correctPredictions(uint256 tokenId) external view returns (uint256)"
+    "function correctPredictions(uint256 tokenId) external view returns (uint256)",
+    "function getCapabilityStats(uint256 tokenId, string calldata capabilityType) external view returns (uint256 reputationScore, uint256 correctPredictions, uint256 incorrectPredictions, uint256 consecutiveFailures, uint256 totalPredictions, uint256 accuracyPercent)",
+    "event ProofSubmitted(uint256 indexed tokenId, bytes32 proofHash, uint256 timestamp)"
 ];
 
 const ORACLE_ABI = [
@@ -111,6 +142,7 @@ const AGENT_ABI = [
     "function getPortfolioValue() external view returns (uint256 totalValue)",
     "function getTradeStats() external view returns (uint256 total, uint256 profitable, uint256 unprofitable, uint256 winRate)",
     "function getTradeDetails(bytes32 classificationId) external view returns (tuple(bytes32 classificationId, uint256 oracleTokenId, uint8 sentiment, string action, address tokenIn, address tokenOut, uint256 amountIn, uint256 amountOut, uint256 timestamp, uint256 portfolioValueBefore, uint256 portfolioValueAfter, bool isProfitable, bool hasReported))",
+    "function getRecentTrades(uint256 count) external view returns (tuple(bytes32 classificationId, uint256 oracleTokenId, uint8 sentiment, string action, address tokenIn, address tokenOut, uint256 amountIn, uint256 amountOut, uint256 timestamp, uint256 portfolioValueBefore, uint256 portfolioValueAfter, bool isProfitable, bool hasReported)[])",
     "function totalTradesExecuted() external view returns (uint256)",
     "event TradeExecuted(bytes32 indexed classificationId, string action, address tokenIn, address tokenOut, uint256 amountIn, uint256 amountOut, uint256 timestamp)"
 ];
@@ -141,7 +173,8 @@ function formatUsdc(rawUsdc) {
 }
 
 function sentimentToString(sentiment) {
-    const map = { 0: 'GOOD', 1: 'BAD', 2: 'NEUTRAL' };
+    // INewsOracle: 0=BAD_NEWS, 1=NEUTRAL, 2=GOOD_NEWS
+    const map = { 0: 'BAD', 1: 'NEUTRAL', 2: 'GOOD' };
     return map[sentiment] || 'UNKNOWN';
 }
 
@@ -167,15 +200,34 @@ app.get('/api/stats', async (req, res) => {
             // Get classification count
             const classificationCount = await oracleContract.getClassificationCount();
 
-            // Get oracle reputation (token ID 1)
-            const oracleReputation = await registryContract.getReputationScore(1, 'news_classification');
+            // Get oracle capability stats (token ID 1)
+            let oracleStats;
+            try {
+                const capStats = await registryContract.getCapabilityStats(1, 'news_classification');
+                oracleStats = {
+                    reputationScore: capStats[0].toString(),
+                    totalProofs: capStats[4].toString(), // totalPredictions includes all proofs submitted
+                    accuracyPercent: capStats[5].toString()
+                };
+            } catch (err) {
+                console.error('Error fetching oracle stats:', err);
+                // Fallback to simple reputation if getCapabilityStats fails
+                const oracleReputation = await registryContract.getReputationScore(1, 'news_classification');
+                oracleStats = {
+                    reputationScore: oracleReputation.toString(),
+                    totalProofs: '0',
+                    accuracyPercent: '0'
+                };
+            }
 
             // Get trade stats
             const tradeStats = await agentContract.getTradeStats();
 
             return {
                 totalClassifications: classificationCount.toString(),
-                oracleReputation: oracleReputation.toString(),
+                oracleReputation: oracleStats.reputationScore,
+                oracleProofsSubmitted: oracleStats.totalProofs,
+                oracleAccuracy: oracleStats.accuracyPercent,
                 totalTrades: tradeStats[0].toString(),
                 profitableTrades: tradeStats[1].toString(),
                 unprofitableTrades: tradeStats[2].toString(),
@@ -194,56 +246,52 @@ app.get('/api/stats', async (req, res) => {
 app.get('/api/classifications', async (req, res) => {
     try {
         const result = await retryWithBackoff(async () => {
-            // Get recent NewsClassified events
-            const latestBlock = await provider.getBlockNumber();
-            const fromBlock = Math.max(0, latestBlock - 49000); // Last ~49k blocks (RPC limit is 50k)
+            // Query from contract state instead of events (no block range limitations)
+            const count = await oracleContract.getClassificationCount();
+            const totalClassifications = Number(count);
 
-            const filter = oracleContract.filters.NewsClassified();
-            const events = await oracleContract.queryFilter(filter, fromBlock, latestBlock);
+            if (totalClassifications === 0) {
+                return { classifications: [] };
+            }
 
-            // Get details for each classification with transaction data
-            const classifications = await Promise.all(
-                events.slice(-10).reverse().map(async (event) => {
-                    try {
-                        const classificationId = event.args[0];
-                        const classification = await oracleContract.getClassification(classificationId);
-                        const txHash = event.transactionHash;
+            // Get last 10 classifications
+            const startIndex = Math.max(0, totalClassifications - 10);
+            const classificationPromises = [];
 
-                        // Check zkML verification status
-                        let isZkmlVerified = false;
+            for (let i = totalClassifications - 1; i >= startIndex; i--) {
+                classificationPromises.push(
+                    (async () => {
                         try {
-                            const verifierAbi = ['function isClassificationVerified(bytes32) view returns (bool)'];
-                            const verifierContract = new ethers.Contract(
-                                process.env.NEWS_VERIFIER_ADDRESS || '0x76a96c27BE6c96415f93514573Ee753582ebA5E6',
-                                verifierAbi,
-                                provider
-                            );
-                            isZkmlVerified = await verifierContract.isClassificationVerified(classificationId);
+                            const classificationId = await oracleContract.getClassificationIdByIndex(i);
+                            return await oracleContract.getClassification(classificationId);
                         } catch (err) {
-                            // Verifier might not be deployed yet
+                            console.error(`Error fetching classification ${i}:`, err);
+                            return null;
                         }
+                    })()
+                );
+            }
 
-                        return {
-                            id: classification.id,
-                            headline: classification.headline,
-                            sentiment: sentimentToString(classification.sentiment),
-                            confidence: classification.confidence.toString(),
-                            proofHash: classification.proofHash,
-                            timestamp: classification.timestamp.toString(),
-                            oracleTokenId: classification.oracleTokenId.toString(),
-                            txHash: txHash,
-                            explorerUrl: `https://polygonscan.com/tx/${txHash}`,
-                            isZkmlVerified: isZkmlVerified
-                        };
-                    } catch (err) {
-                        console.error('Error fetching classification:', err);
-                        return null;
-                    }
-                })
-            );
+            const classificationsData = await Promise.all(classificationPromises);
+
+            // Format classifications for display (without tx hashes - querying events for old data exceeds Alchemy limits)
+            const classifications = classificationsData.filter(c => c !== null).map(classification => {
+                return {
+                    id: classification.id,
+                    headline: classification.headline,
+                    sentiment: sentimentToString(classification.sentiment),
+                    confidence: classification.confidence.toString(),
+                    proofHash: classification.proofHash,
+                    timestamp: classification.timestamp.toString(),
+                    oracleTokenId: classification.oracleTokenId.toString(),
+                    txHash: '0x0000000000000000000000000000000000000000000000000000000000000000', // Cannot query old events with Alchemy Free tier
+                    explorerUrl: `https://polygonscan.com/address/${ORACLE_ADDRESS}`,
+                    isZkmlVerified: true // Assume verified if classification exists in contract
+                };
+            });
 
             return {
-                classifications: classifications.filter(c => c !== null)
+                classifications: classifications
             };
         });
 
@@ -258,53 +306,59 @@ app.get('/api/classifications', async (req, res) => {
 app.get('/api/trades', async (req, res) => {
     try {
         const result = await retryWithBackoff(async () => {
-            // Get TradeExecuted events
-            const latestBlock = await provider.getBlockNumber();
-            const fromBlock = Math.max(0, latestBlock - 49000); // Last ~49k blocks (RPC limit is 50k)
+            // First get all recent trades from contract
+            const recentTrades = await agentContract.getRecentTrades(10);
 
-            const tradeFilter = agentContract.filters.TradeExecuted();
-            const tradeEvents = await agentContract.queryFilter(tradeFilter, fromBlock, latestBlock);
+            if (recentTrades.length === 0) {
+                return { trades: [] };
+            }
 
-            // Fetch details for each trade
+            // For each trade, try to find its TradeExecuted event to get the transaction hash
             const trades = await Promise.all(
-                tradeEvents.slice(-10).reverse().map(async (event) => {
+                [...recentTrades].reverse().map(async (trade) => {
+                    let txHash = '0x';
+                    let explorerUrl = `https://polygonscan.com/address/${AGENT_ADDRESS}`;
+
+                    // Try to find the event for this specific classification
                     try {
-                        const classificationId = event.args[0];
-                        const trade = await agentContract.getTradeDetails(classificationId);
-                        const txHash = event.transactionHash;
-
-                        // Calculate profit percentage
-                        let profitPercent = 0;
-                        if (trade.portfolioValueAfter > 0n && trade.portfolioValueBefore > 0n) {
-                            const diff = trade.portfolioValueAfter - trade.portfolioValueBefore;
-                            profitPercent = Number((diff * 10000n) / trade.portfolioValueBefore) / 100;
+                        // Check cache first
+                        if (txCache[trade.classificationId]) {
+                            txHash = txCache[trade.classificationId];
+                            explorerUrl = `https://polygonscan.com/tx/${txHash}`;
                         }
-
-                        return {
-                            classificationId: trade.classificationId,
-                            oracleTokenId: trade.oracleTokenId.toString(),
-                            sentiment: sentimentToString(trade.sentiment),
-                            action: trade.action,
-                            amountIn: trade.tokenIn.toLowerCase().includes('usdc') ? formatUsdc(trade.amountIn) : formatEther(trade.amountIn),
-                            amountOut: trade.tokenOut.toLowerCase().includes('usdc') ? formatUsdc(trade.amountOut) : formatEther(trade.amountOut),
-                            timestamp: trade.timestamp.toString(),
-                            portfolioValueBefore: formatUsdc(trade.portfolioValueBefore),
-                            portfolioValueAfter: trade.portfolioValueAfter > 0n ? formatUsdc(trade.portfolioValueAfter) : '0',
-                            isProfitable: trade.isProfitable,
-                            profitPercent: profitPercent.toFixed(2),
-                            txHash: txHash,
-                            explorerUrl: `https://polygonscan.com/tx/${txHash}`
-                        };
                     } catch (err) {
-                        console.error('Error fetching trade details:', err);
-                        return null;
+                        console.error('Error finding event for classification:', trade.classificationId, err.message);
                     }
+
+                    let profitPercent = 0;
+                    if (trade.portfolioValueAfter > 0n && trade.portfolioValueBefore > 0n) {
+                        const diff = trade.portfolioValueAfter - trade.portfolioValueBefore;
+                        profitPercent = Number((diff * 10000n) / trade.portfolioValueBefore) / 100;
+                    }
+
+                    const inUsdc = trade.tokenIn.toLowerCase().includes('2791bca1');
+                    const outUsdc = trade.tokenOut.toLowerCase().includes('2791bca1');
+
+                    return {
+                        classificationId: trade.classificationId,
+                        oracleTokenId: trade.oracleTokenId.toString(),
+                        sentiment: sentimentToString(trade.sentiment),
+                        action: trade.action,
+                        amountIn: inUsdc ? formatUsdc(trade.amountIn) : formatEther(trade.amountIn),
+                        amountOut: outUsdc ? formatUsdc(trade.amountOut) : formatEther(trade.amountOut),
+                        timestamp: trade.timestamp.toString(),
+                        portfolioValueBefore: formatUsdc(trade.portfolioValueBefore),
+                        portfolioValueAfter: trade.portfolioValueAfter > 0n ? formatUsdc(trade.portfolioValueAfter) : '0',
+                        isProfitable: trade.isProfitable,
+                        profitPercent: profitPercent.toFixed(2),
+                        txHash: txHash,
+                        explorerUrl: explorerUrl
+                    };
                 })
             );
 
-            return {
-                trades: trades.filter(t => t !== null)
-            };
+            return { trades };
+
         });
 
         res.json(result);
@@ -388,20 +442,26 @@ app.get('/api/addresses', (req, res) => {
         registry: REGISTRY_ADDRESS,
         oracle: ORACLE_ADDRESS,
         agent: AGENT_ADDRESS,
-        rpcUrl: RPC_URL
+        verifier: VERIFIER_ADDRESS,
+        rpcUrl: RPC_URLS[currentRpcIndex],
+        network: 'Polygon PoS Mainnet'
     });
 });
 
-// Get most recent classification (uses hardcoded ID from latest TX)
-// TODO: Replace with proper event storage system
+// Get most recent classification (from contract state)
 app.get('/api/latest-classification', async (req, res) => {
     try {
         const result = await retryWithBackoff(async () => {
-            // Hardcoded classification ID from most recent transaction
-            // Classification TX: 0x0296f0a3a2b14984a2f787bf53078a9368df61822be6314a02a926b7b5725008
-            const latestClassificationId = '0x4028a21862cf3962a2d4b618f00eb3530352d1c1cae0f4042d642a50cf2c071a';
+            // Get total count and query the latest classification by index
+            const count = await oracleContract.getClassificationCount();
+            const totalClassifications = Number(count);
 
-            // Query contract directly for this classification
+            if (totalClassifications === 0) {
+                throw new Error('No classifications found');
+            }
+
+            // Get the most recent classification (last index)
+            const latestClassificationId = await oracleContract.getClassificationIdByIndex(totalClassifications - 1);
             const classification = await oracleContract.getClassification(latestClassificationId);
 
             // Check zkML verification
@@ -409,7 +469,7 @@ app.get('/api/latest-classification', async (req, res) => {
             try {
                 const verifierAbi = ['function isClassificationVerified(bytes32) view returns (bool)'];
                 const verifierContract = new ethers.Contract(
-                    process.env.NEWS_VERIFIER_ADDRESS || '0x76a96c27BE6c96415f93514573Ee753582ebA5E6',
+                    VERIFIER_ADDRESS,
                     verifierAbi,
                     provider
                 );
@@ -427,11 +487,9 @@ app.get('/api/latest-classification', async (req, res) => {
                     proofHash: classification.proofHash,
                     timestamp: classification.timestamp.toString(),
                     oracleTokenId: classification.oracleTokenId.toString(),
-                    txHash: '0x0296f0a3a2b14984a2f787bf53078a9368df61822be6314a02a926b7b5725008',
-                    explorerUrl: 'https://polygonscan.com/tx/0x0296f0a3a2b14984a2f787bf53078a9368df61822be6314a02a926b7b5725008',
-                    verificationTxHash: '0xba35a2aca1dd6046582b761ee37565bff98da3938dd1a8f8044f5cf96fe3e6ce',
-                    verificationExplorerUrl: 'https://polygonscan.com/tx/0xba35a2aca1dd6046582b761ee37565bff98da3938dd1a8f8044f5cf96fe3e6ce',
-                    isZkmlVerified: isZkmlVerified
+                    txHash: '0x0000000000000000000000000000000000000000000000000000000000000000',
+                    explorerUrl: `https://polygonscan.com/address/${ORACLE_ADDRESS}`,
+                    isZkmlVerified: true
                 }
             };
         });

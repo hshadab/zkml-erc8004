@@ -1,5 +1,22 @@
 # zkML News Oracle - ERC-8004 Autonomous Trading Agent
 
+NOTE: This project now defaults to Polygon PoS for all demos and usage. For the current end-to-end guide, see POLYGON_README.md. The Base Sepolia content below is archived for reference only.
+
+Quick E2E on Polygon
+- One‑shot end‑to‑end (classify → post → trade):
+  - `cd news-service`
+  - `node src/runE2EOnce.js "Bitcoin surges as ETFs attract fresh inflows"`
+  - Prints the classification, Polygon TX for posting, and trade TX from `TradingAgent.reactToNews()`.
+
+- Continuous polling + auto‑trade:
+  - `cd news-service`
+  - `ENABLE_AUTO_TRADE=true USE_REAL_PROOFS=false npm start`
+  - Service polls CoinDesk RSS every 5 minutes, classifies, posts to the Polygon Oracle, and triggers a trade.
+
+Proof Modes
+- Default: mock proof (JOLT hash only). Works with the deployed Oracle and enables fast demos.
+- Real Groth16: set `USE_REAL_PROOFS=true` and provide circuit assets (JOLT/zkSNARK files) per the zkML docs. If assets are missing, stick with the default mock mode.
+
 A production-ready implementation of **ERC-8004 (Verifiable AI Agents)** that combines zero-knowledge machine learning with autonomous on-chain trading.
 
 ## Overview
@@ -130,24 +147,21 @@ The UI will be available at `http://localhost:3001`
 ### E2E Demo: Submit Article → Trade
 
 ```bash
-cd zkml-service
-node submitArticle.js "Bitcoin Hits New Record High as Institutional Adoption Surges"
+cd news-service
+node src/runE2EOnce.js "Bitcoin Hits New Record High as Institutional Adoption Surges"
 ```
 
 This will:
-1. ✅ Generate zkML classification (JOLT + Groth16, ~26 seconds)
-2. ✅ Post to Base Sepolia with on-chain verification
-3. ✅ Return classification ID
+1. ✅ Generate classification (default mock proof) and confidence
+2. ✅ Post to the Polygon Oracle and log the tx link
+3. ✅ Trigger `TradingAgent.reactToNews()` and log the trade tx link
 
-Then execute the trade:
-
+To run the background service instead (polling + auto‑trade):
 ```bash
-cd ../trading-service
-# Edit tradeNewClassification.js with your classification ID
-node tradeNewClassification.js
+cd news-service
+ENABLE_AUTO_TRADE=true USE_REAL_PROOFS=false npm start
 ```
-
-Watch the dashboard update in real-time with the new classification and trade!
+The dashboard updates automatically as new classifications and trades land on chain.
 
 ## System Flow
 

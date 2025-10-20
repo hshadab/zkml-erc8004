@@ -1,8 +1,20 @@
 # zkML News Oracle - Quick Start Guide
 
-## 🚀 System Overview
+## 🚀 System Overview (Polygon Default)
 
-This is a **100% REAL zkML** news classification oracle with on-chain verification on Base Sepolia.
+This project now defaults to Polygon PoS for all demos and usage.
+
+Fastest path:
+- One‑shot E2E on Polygon:
+  - `cd news-service`
+  - `node src/runE2EOnce.js "Bitcoin hits new ATH on ETF inflows"`
+- Continuous poller + auto‑trade:
+  - `cd news-service`
+  - `ENABLE_AUTO_TRADE=true USE_REAL_PROOFS=false npm start`
+
+For full deployment and monitoring, see `POLYGON_README.md`.
+
+The archived content below describes the older Base Sepolia setup and is retained for reference.
 
 **Complete Pipeline:**
 ```

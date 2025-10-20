@@ -56,8 +56,8 @@ This will:
 ```bash
 cd news-service
 
-# Run a single test trade (~$0.06)
-./test-polygon-trade.sh
+# One-shot E2E: classify → post → trade (~20–40s)
+node src/runE2EOnce.js "SEC approves Bitcoin ETF; institutions add exposure"
 ```
 
 **Done!** Your zkML agent just executed a real trade on Polygon!
@@ -73,6 +73,12 @@ Test a single trade on Polygon.
 - **Time**: ~30 seconds
 - **Cost**: ~$0.06
 - **Use case**: Verify deployment works
+
+### `node src/runE2EOnce.js "<headline>"`
+Run a single end‑to‑end classification → post → trade.
+- **Time**: ~20–40 seconds
+- **Proof**: Mock by default (see Proof Modes)
+- **Use case**: Quick E2E validation without waiting for RSS
 
 ### `./run-10-trades.sh`
 Run 10 consecutive trades.
@@ -98,6 +104,11 @@ Run automated service (500+ trades).
 - **Generates**: zkML proofs for each article
 - **Executes**: Real trades based on sentiment
 - **Cost**: ~$0.06 per trade cycle
+
+Recommended env for automated run:
+```bash
+ENABLE_AUTO_TRADE=true USE_REAL_PROOFS=false npm start
+```
 
 ---
 
@@ -226,6 +237,32 @@ cast send $POLYGON_AGENT --value 5ether --rpc-url https://polygon-rpc.com
 zkML proofs take ~25 seconds. This is normal.
 Progress is shown with dots: `................`
 
+If you don’t have circuit assets locally, use mock proofs (default):
+```bash
+USE_REAL_PROOFS=false node src/runE2EOnce.js "your headline"
+```
+
+### "Transaction timed out" or stuck submissions
+We added extended provider timeouts (180s), polling mode, and automatic retries with fee bumps. If you still see timeouts:
+- Re-run the command; it will retry up to 3 times
+- Prefer a reliable RPC (Alchemy/QuickNode) via `POLYGON_RPC_URL`
+
+### Model always returns BEARISH/60%
+If ONNX vocabulary is missing or words don’t map, tokenization can produce all zeros. The pipeline now falls back to a heuristic classifier (VADER + keywords) that yields non-constant outputs and higher confidence when signals are strong.
+
+### Lower confidence threshold (testing)
+You can temporarily lower the TradingAgent’s `minConfidence` on Polygon:
+```bash
+export POLYGON_RPC_URL=https://polygon-rpc.com
+export ORACLE_PRIVATE_KEY=0xYOUR_KEY
+export POLYGON_AGENT=0xYourAgentAddress
+export POLYGON_MIN_CONFIDENCE=60      # optional
+export POLYGON_TRADE_SIZE_ETH=0.005   # optional
+
+node news-service/src/polygonUpdateStrategy.js
+```
+Raise it back once end-to-end is stable.
+
 ---
 
 ## Next Steps After 500 Trades
@@ -282,6 +319,7 @@ Progress is shown with dots: `................`
 ├── POLYGON_DEPLOYMENT_GUIDE.md    # Detailed guide
 └── news-service/
     ├── test-polygon-trade.sh      # Test single trade
+    ├── src/runE2EOnce.js          # One-shot E2E classify→post→trade
     ├── run-10-trades.sh           # Batch test
     ├── check-polygon-status.sh    # Quick status
     └── monitor-polygon.sh         # Detailed monitoring
@@ -357,7 +395,7 @@ You'll be able to say:
 
 ## UI Dashboard
 
-The UI has been fully migrated to Polygon PoS:
+The UI has been fully migrated to Polygon PoS with Alchemy RPC support:
 
 ```bash
 cd /home/hshadab/zkml-erc8004/ui
@@ -375,12 +413,30 @@ Visit: `http://localhost:3001`
 - Trade history and P&L tracking
 - zkML proof verification status
 - Network badge: "POLYGON"
+- Alchemy RPC integration for reliable connectivity
 
 **UI Configuration:**
 All contract addresses automatically loaded from `/ui/.env`:
 - NewsOracle: `0x037B74A3c354522312C67a095D043347E9Ffc40f`
 - TradingAgent: `0x2e091b211a0d2a7428c83909b3293c42f2af9e1b`
 - Registry: `0x078C7aFbFADAC9BE82F372e867231d605A8d3428`
+- RPC URL: Alchemy Polygon endpoint (configured in `.env`)
+
+**Alchemy RPC Benefits:**
+- Higher rate limits than public RPCs
+- Better reliability and uptime
+- Faster response times
+- Support for querying historical events
+
+**Note:** The free tier has a 10-block limit for `eth_getLogs` queries, so the UI displays recent events from the last 10 blocks only.
+
+Proof Modes (Important)
+- Default: Mock proof (JOLT hash only). Fast and sufficient for Oracle + trade on Polygon.
+- Real Groth16: Set `USE_REAL_PROOFS=true` and provide circuit assets (JOLT/zkSNARK files). Without assets, keep mock mode.
+
+Service Env Tips
+- Auto-trade: `ENABLE_AUTO_TRADE=true`
+- Proof mode: `USE_REAL_PROOFS=false` (default) or `true` when circuits are installed
 
 ---
 

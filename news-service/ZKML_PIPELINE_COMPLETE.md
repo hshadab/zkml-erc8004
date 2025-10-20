@@ -1,5 +1,7 @@
 # zkML News Oracle - Complete Pipeline Implementation
 
+Archived note: This document references Base Sepolia in several sections. The project now defaults to Polygon PoS. For the current Polygon-first instructions, see POLYGON_README.md.
+
 ## 🎉 Status: 100% Real zkML Implementation Complete!
 
 **Last Updated**: 2025-10-17

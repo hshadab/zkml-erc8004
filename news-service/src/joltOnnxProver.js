@@ -10,6 +10,7 @@ import { spawn } from 'child_process';
 import ort from 'onnxruntime-node';
 import crypto from 'crypto';
 import { logger } from './logger.js';
+import { extractFeatures, mapFeaturesToClassification } from './featureExtractor.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,6 +31,7 @@ export class JoltOnnxProver {
   constructor() {
     this.session = null;
     this.vocab = null;
+    this.heuristicOnly = false;
   }
 
   /**
@@ -49,8 +51,11 @@ export class JoltOnnxProver {
       logger.info(`   Input: ${this.session.inputNames[0]}`);
       logger.info(`   Output: ${this.session.outputNames[0]}`);
     } catch (error) {
-      logger.error(`Failed to load sentiment0 model: ${error.message}`);
-      throw error;
+      logger.warn(`⚠️  ONNX model/vocab not available: ${error.message}`);
+      logger.warn('   Falling back to heuristic classifier (no ONNX)');
+      this.session = null;
+      this.vocab = {};
+      this.heuristicOnly = true;
     }
   }
 
@@ -60,8 +65,26 @@ export class JoltOnnxProver {
    * @returns {number[]} - Token IDs
    */
   tokenize(text) {
-    const words = text.toLowerCase().split(/\\s+/);
-    const tokens = words.map(word => this.vocab[word] || PAD_ID);
+    // Normalize tokens: lowercase, strip punctuation, basic stemming
+    const words = text
+      .toLowerCase()
+      .split(/\s+/)
+      .map(w => w.replace(/[^a-z0-9']/g, ''))
+      .filter(Boolean)
+      .map(w => {
+        if (w.endsWith('ing') && w.length > 5) return w.slice(0, -3);
+        if (w.endsWith('ed') && w.length > 4) return w.slice(0, -2);
+        if (w.endsWith('es') && w.length > 4) return w.slice(0, -2);
+        if (w.endsWith('s') && w.length > 3) return w.slice(0, -1);
+        return w;
+      });
+
+    const unkId = this.vocab && (this.vocab.UNK || this.vocab.unk || this.vocab['<unk>'] || this.vocab['[UNK]']) || 1;
+
+    const tokens = words.map(word => {
+      const id = this.vocab ? this.vocab[word] : undefined;
+      return (typeof id === 'number' && Number.isFinite(id)) ? id : (this.heuristicOnly ? PAD_ID : unkId);
+    });
     return tokens;
   }
 
@@ -90,7 +113,17 @@ export class JoltOnnxProver {
 
     logger.info(`   Tokens: [${paddedTokens.join(', ')}]`);
 
-    // Create input tensor [1, 5]
+    // If ONNX session is unavailable, return placeholder; sentiment handled by heuristics later
+    if (!this.session) {
+      return {
+        sentiment: 1, // NEUTRAL placeholder
+        rawOutput: 0,
+        tokens: paddedTokens,
+        inferenceTimeMs: 0
+      };
+    }
+
+    // Create input tensor [1, MAX_LEN]
     const inputTensor = new ort.Tensor(
       'int64',
       new BigInt64Array(paddedTokens.map(t => BigInt(t))),
@@ -265,15 +298,25 @@ export class JoltOnnxProver {
       inference.sentiment
     );
 
-    // Calculate confidence based on model output
-    // crypto_sentiment outputs boolean, confidence based on token matches
-    // More matched keywords = higher confidence
-    const matchedTokens = inference.tokens.filter(t => t !== 0).length;
-    const confidence = Math.min(95, 60 + (matchedTokens * 5)); // 60-95% based on matches
+    // Heuristic fallback (resolves constant 60% + bearish when vocab mismatches)
+    const features = extractFeatures(headline);
+    const heuristic = mapFeaturesToClassification(features);
+    const nonZeroTokens = inference.tokens.filter(t => t !== 0).length;
+    const modelConfidence = Math.min(95, 60 + (nonZeroTokens * 5));
+
+    const tokenizationWeak = nonZeroTokens <= 2 || this.heuristicOnly;
+    let finalSentiment = inference.sentiment;
+    if (tokenizationWeak) {
+      finalSentiment = heuristic.sentiment === 0 ? 0 : (heuristic.sentiment === 2 ? 2 : 1);
+    } else if (inference.sentiment !== heuristic.sentiment && heuristic.confidence >= modelConfidence + 5) {
+      finalSentiment = heuristic.sentiment;
+    }
+
+    const finalConfidence = Math.max(modelConfidence, heuristic.confidence);
 
     return {
-      sentiment: inference.sentiment,
-      confidence,
+      sentiment: finalSentiment,
+      confidence: finalConfidence,
       proofData: joltProof.proofData,
       proofHash: joltProof.proofHash,
       isReal: joltProof.isReal,

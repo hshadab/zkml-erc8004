@@ -19,11 +19,19 @@ export class OraclePoster {
     try {
       logger.info('Initializing oracle poster...');
 
-      // Connect to Base Sepolia
-      this.provider = new ethers.JsonRpcProvider(config.rpcUrl);
+      // Connect with extended timeout + polling (helps in WSL2 environments)
+      const fetchReq = new ethers.FetchRequest(config.rpcUrl);
+      fetchReq.timeout = 180000; // 180s
+      this.provider = new ethers.JsonRpcProvider(fetchReq);
+      this.provider.polling = true;
+      this.provider.pollingInterval = 4000;
 
-      // Create wallet
-      this.wallet = new ethers.Wallet(config.oraclePrivateKey, this.provider);
+      // Create wallet (sanitize private key)
+      const pkRaw = (config.oraclePrivateKey || '').replace(/["'\s]/g, '');
+      const body = pkRaw.startsWith('0x') ? pkRaw.slice(2) : pkRaw;
+      const hexOnly = body.replace(/[^0-9a-fA-F]/g, '');
+      const cleanKey = '0x' + hexOnly;
+      this.wallet = new ethers.Wallet(cleanKey, this.provider);
 
       logger.info(`Oracle wallet address: ${this.wallet.address}`);
 
@@ -76,35 +84,81 @@ export class OraclePoster {
       logger.info(`Posting classification for: "${headline}"`);
       logger.info(`Sentiment: ${['BAD', 'NEUTRAL', 'GOOD'][sentiment]}, Confidence: ${confidence}%`);
 
-      // Estimate gas
-      const gasEstimate = await this.contract.postClassification.estimateGas(
-        headline,
-        sentiment,
-        confidence,
-        proofHash
-      );
+      // Try to estimate gas; if it fails or times out, fall back to static limit
+      let gasLimit = 500000n;
+      try {
+        const estimated = await this.contract.postClassification.estimateGas(
+          headline,
+          sentiment,
+          confidence,
+          proofHash
+        );
+        gasLimit = estimated * 120n / 100n; // +20%
+        logger.info(`Estimated gas: ${estimated.toString()} → using ${gasLimit.toString()}`);
+      } catch (e) {
+        logger.warn(`Gas estimation failed, using default limit ${gasLimit}: ${e.message}`);
+      }
 
-      logger.info(`Estimated gas: ${gasEstimate.toString()}`);
+      // Robust retry with fee bump
+      const maxAttempts = 3;
+      const nonce = await this.provider.getTransactionCount(this.wallet.address, 'latest');
+      let tx, receipt;
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          const fee = await this.provider.getFeeData();
+          const bump = 1 + (attempt - 1) * 0.25;
+          const maxPriorityFeePerGas = fee.maxPriorityFeePerGas
+            ? BigInt(Math.ceil(Number(fee.maxPriorityFeePerGas) * bump))
+            : 2_000_000_000n;
+          const maxFeePerGas = fee.maxFeePerGas
+            ? BigInt(Math.ceil(Number(fee.maxFeePerGas) * bump))
+            : 30_000_000_000n;
 
-      // Send transaction
-      const tx = await this.contract.postClassification(
-        headline,
-        sentiment,
-        confidence,
-        proofHash,
-        {
-          gasLimit: gasEstimate * 120n / 100n  // Add 20% buffer
+          tx = await this.contract.postClassification(
+            headline,
+            sentiment,
+            confidence,
+            proofHash,
+            {
+              gasLimit,
+              type: 2,
+              maxPriorityFeePerGas,
+              maxFeePerGas,
+              nonce
+            }
+          );
+
+          logger.info(`Transaction sent: ${tx.hash}`);
+          logger.info('Waiting for confirmation...');
+
+          receipt = await this.provider.waitForTransaction(tx.hash, 1, 180000);
+          if (!receipt) throw new Error('Transaction wait timeout');
+          break;
+        } catch (err) {
+          const msg = (err && err.message) ? err.message.toLowerCase() : '';
+          logger.warn(`Attempt ${attempt} failed: ${err.message}`);
+          if (attempt < maxAttempts && (msg.includes('timeout') || msg.includes('network'))) {
+            await new Promise(r => setTimeout(r, 1000 * attempt));
+            continue;
+          }
+          throw err;
         }
-      );
-
-      logger.info(`Transaction sent: ${tx.hash}`);
-      logger.info('Waiting for confirmation...');
-
-      const receipt = await tx.wait();
+      }
 
       logger.info(`✅ Classification posted! Block: ${receipt.blockNumber}`);
       logger.info(`   Gas used: ${receipt.gasUsed.toString()}`);
-      logger.info(`   BaseScan: https://sepolia.basescan.org/tx/${receipt.hash}`);
+      try {
+        const net = await this.provider.getNetwork();
+        const explorer = net.chainId === 137n
+          ? 'https://polygonscan.com/tx/'
+          : net.chainId === 84532n
+            ? 'https://sepolia.basescan.org/tx/'
+            : 'https://etherscan.io/tx/';
+        logger.info(`   Explorer: ${explorer}${receipt.hash}`);
+      } catch {
+        // Fallback to printing the hash only
+        logger.info(`   TX: ${receipt.hash}`);
+      }
 
       // Parse event
       const event = receipt.logs

@@ -802,8 +802,8 @@
                 </div>
                 <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-tertiary); border-radius: 8px; border: 1px solid var(--border-color);">
                     <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">💼 Agent Wallet Address</div>
-                    <a href="https://polygonscan.com/address/0x2B2c8F40b7Ee5064f55f1FF91a200264DA88915f" target="_blank" style="text-decoration: none;">
-                        <div class="proof-hash" style="color: var(--accent-blue); cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--accent-teal)'" onmouseout="this.style.color='var(--accent-blue)'">0x2B2c8F40b7Ee5064f55f1FF91a200264DA88915f</div>
+                    <a href="https://polygonscan.com/address/0x7c635F575Fde6ccD2E800F1ceAB51daD2D225093" target="_blank" style="text-decoration: none;">
+                        <div class="proof-hash" style="color: var(--accent-blue); cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--accent-teal)'" onmouseout="this.style.color='var(--accent-blue)'">0x7c635F575Fde6ccD2E800F1ceAB51daD2D225093</div>
                     </a>
                 </div>
                 <div class="portfolio-grid" id="portfolio-grid">
@@ -875,8 +875,8 @@
                 </div>
                 <div class="portfolio-item">
                     <div class="portfolio-label">💼 Trading Agent</div>
-                    <a href="https://polygonscan.com/address/0x2B2c8F40b7Ee5064f55f1FF91a200264DA88915f" target="_blank" style="text-decoration: none;">
-                        <div class="proof-hash" id="agent-address" style="color: var(--accent-blue); cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--accent-teal)'" onmouseout="this.style.color='var(--accent-blue)'">0x2B2c8F40b7Ee5064f55f1FF91a200264DA88915f</div>
+                    <a href="https://polygonscan.com/address/0x7c635F575Fde6ccD2E800F1ceAB51daD2D225093" target="_blank" style="text-decoration: none;">
+                        <div class="proof-hash" id="agent-address" style="color: var(--accent-blue); cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--accent-teal)'" onmouseout="this.style.color='var(--accent-blue)'">0x7c635F575Fde6ccD2E800F1ceAB51daD2D225093</div>
                     </a>
                 </div>
                 <div class="portfolio-item">

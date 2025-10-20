@@ -1,9 +1,13 @@
 import { ethers } from 'ethers';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { ZkmlClassifier } from './zkmlClassifier.js';
 import { logger } from './logger.js';
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
 /**
  * Polygon-specific zkML Classifier
@@ -13,16 +17,35 @@ export class PolygonClassifier {
   constructor() {
     this.rpcUrl = process.env.POLYGON_RPC_URL || 'https://polygon-rpc.com';
     this.oracleAddress = process.env.POLYGON_ORACLE;
-    this.privateKey = process.env.ORACLE_PRIVATE_KEY;
+    // Sanitize private key (strip quotes/whitespace and enforce hex-only)
+    const pkRaw = (process.env.ORACLE_PRIVATE_KEY || '').replace(/["'\s]/g, '');
+    const body = pkRaw.startsWith('0x') ? pkRaw.slice(2) : pkRaw;
+    const hexOnly = body.replace(/[^0-9a-fA-F]/g, '');
+    this.privateKey = '0x' + hexOnly;
 
-    this.provider = new ethers.JsonRpcProvider(this.rpcUrl);
+    // Create custom FetchRequest with extended timeout for WSL2 compatibility
+    const fetchReq = new ethers.FetchRequest(this.rpcUrl);
+    fetchReq.timeout = 180000; // 180 second timeout
+
+    // Explicitly specify Polygon PoS Mainnet network (Chain ID: 137)
+    const network = {
+      name: 'matic',
+      chainId: 137
+    };
+
+    this.provider = new ethers.JsonRpcProvider(fetchReq, network, {
+      staticNetwork: true
+    });
     this.wallet = new ethers.Wallet(this.privateKey, this.provider);
+    // Improve stability on WSL2
+    this.provider.polling = true;
+    this.provider.pollingInterval = 4000;
 
-    // Oracle ABI - submitClassificationWithProof function
+    // Oracle ABI - postClassification function
     this.oracleAbi = [
-      'function submitClassificationWithProof(string headline, uint8 sentiment, uint8 confidence, bytes32 proofHash, bytes proof) external returns (bytes32)',
-      'function getClassification(bytes32 id) external view returns (tuple(bytes32 id, string headline, uint8 sentiment, uint8 confidence, uint256 timestamp, address submitter, bytes32 proofHash))',
-      'event ClassificationSubmitted(bytes32 indexed id, string headline, uint8 sentiment, uint8 confidence, uint256 timestamp, address submitter)'
+      'function postClassification(string headline, uint8 sentiment, uint8 confidence, bytes32 proofHash) external returns (bytes32)',
+      'function getClassificationCount() external view returns (uint256)',
+      'event NewsClassified(bytes32 indexed classificationId, string headline, uint8 sentiment, uint8 confidence, bytes32 proofHash, uint256 timestamp, uint256 oracleTokenId)'
     ];
 
     this.oracle = new ethers.Contract(this.oracleAddress, this.oracleAbi, this.wallet);
@@ -48,8 +71,9 @@ export class PolygonClassifier {
       throw new Error(result.reason || result.error || 'Classification failed');
     }
 
+    const sentimentLabel = result.sentiment === 2 ? 'BULLISH' : (result.sentiment === 0 ? 'BEARISH' : 'NEUTRAL');
     logger.info(`✅ zkML Classification generated:`);
-    logger.info(`   Sentiment: ${result.sentiment === 1 ? 'BULLISH' : 'BEARISH'}`);
+    logger.info(`   Sentiment: ${sentimentLabel}`);
     logger.info(`   Confidence: ${result.confidence}%`);
     logger.info(`   JOLT Proof: ${result.timingMs.jolt}ms`);
     logger.info(`   Groth16 Wrapper: ${result.timingMs.groth16}ms`);
@@ -76,56 +100,97 @@ export class PolygonClassifier {
     const proofHash = ethers.keccak256(proof.fullProof);
 
     logger.info(`   Headline: "${headline}"`);
-    logger.info(`   Sentiment: ${sentiment} (${sentiment === 1 ? 'BULLISH' : 'BEARISH'})`);
+    const submitLabel = sentiment === 2 ? 'BULLISH' : (sentiment === 0 ? 'BEARISH' : 'NEUTRAL');
+    logger.info(`   Sentiment: ${sentiment} (${submitLabel})`);
     logger.info(`   Confidence: ${confidence}%`);
     logger.info(`   Proof Hash: ${proofHash.slice(0, 10)}...`);
 
-    try {
-      // Submit classification with proof
-      const tx = await this.oracle.submitClassificationWithProof(
-        headline,
-        sentiment,
-        confidence,
-        proofHash,
-        proof.fullProof,
-        { gasLimit: 500000 }
-      );
+    // Robust retry with fee bump and explicit gas
+    const maxAttempts = 3;
+    const baseGasLimit = 500000n;
+    let lastError;
+    const nonce = await this.provider.getTransactionCount(this.wallet.address, 'latest');
 
-      logger.info(`   📤 TX submitted: ${tx.hash}`);
-      logger.info(`   🔗 https://polygonscan.com/tx/${tx.hash}`);
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const fee = await this.provider.getFeeData();
+        // Bump fees per attempt
+        const bump = 1 + (attempt - 1) * 0.25; // 0%, 25%, 50%
+        const maxPriorityFeePerGas = fee.maxPriorityFeePerGas
+          ? BigInt(Math.ceil(Number(fee.maxPriorityFeePerGas) * bump))
+          : 2_000_000_000n; // 2 gwei fallback
+        const maxFeePerGas = fee.maxFeePerGas
+          ? BigInt(Math.ceil(Number(fee.maxFeePerGas) * bump))
+          : 30_000_000_000n; // 30 gwei fallback
 
-      const receipt = await tx.wait();
-      logger.info(`   ✅ Classification posted! Gas used: ${receipt.gasUsed}`);
+        logger.info(`   Attempt ${attempt}/${maxAttempts} with fee bump x${bump.toFixed(2)}`);
 
-      // Extract classification ID from event
-      const event = receipt.logs.find(log => {
-        try {
-          const parsed = this.oracle.interface.parseLog(log);
-          return parsed && parsed.name === 'ClassificationSubmitted';
-        } catch {
-          return false;
-        }
-      });
-
-      if (event) {
-        const parsed = this.oracle.interface.parseLog(event);
-        const classificationId = parsed.args.id;
-
-        logger.info(`\n✅ Classification ID: ${classificationId}`);
-
-        return {
-          id: classificationId,
-          txHash: tx.hash,
-          gasUsed: receipt.gasUsed.toString()
+        const overrides = {
+          gasLimit: baseGasLimit,
+          type: 2,
+          maxPriorityFeePerGas,
+          maxFeePerGas,
+          nonce
         };
-      } else {
-        throw new Error('ClassificationSubmitted event not found');
-      }
 
-    } catch (error) {
-      logger.error(`❌ Submission failed: ${error.message}`);
-      throw error;
+        const tx = await this.oracle.postClassification(
+          headline,
+          sentiment,
+          confidence,
+          proofHash,
+          overrides
+        );
+
+        logger.info(`   📤 TX submitted: ${tx.hash}`);
+        logger.info(`   🔗 https://polygonscan.com/tx/${tx.hash}`);
+
+        // Wait with explicit timeout
+        const receipt = await this.provider.waitForTransaction(tx.hash, 1, 180000);
+        if (!receipt) throw new Error('Transaction wait timeout');
+
+        logger.info(`   ✅ Classification posted! Gas used: ${receipt.gasUsed}`);
+
+        // Extract classification ID from event
+        const event = receipt.logs.find(log => {
+          try {
+            const parsed = this.oracle.interface.parseLog(log);
+            return parsed && parsed.name === 'NewsClassified';
+          } catch {
+            return false;
+          }
+        });
+
+        if (event) {
+          const parsed = this.oracle.interface.parseLog(event);
+          const classificationId = parsed.args.classificationId;
+
+          logger.info(`\n✅ Classification ID: ${classificationId}`);
+
+          return {
+            id: classificationId,
+            txHash: tx.hash,
+            gasUsed: (receipt.gasUsed || 0n).toString()
+          };
+        } else {
+          throw new Error('NewsClassified event not found');
+        }
+
+      } catch (error) {
+        lastError = error;
+        const msg = (error && error.message) ? error.message.toLowerCase() : '';
+        logger.warn(`   ❌ Attempt ${attempt} failed: ${error.message}`);
+        if (attempt < maxAttempts && (msg.includes('timeout') || msg.includes('timed out') || msg.includes('network'))) {
+          const backoffMs = 1000 * attempt;
+          logger.info(`   ⏳ Retrying in ${backoffMs}ms...`);
+          await new Promise(r => setTimeout(r, backoffMs));
+          continue;
+        }
+        break;
+      }
     }
+
+    logger.error(`❌ Submission failed after ${maxAttempts} attempts: ${lastError?.message || 'unknown error'}`);
+    throw lastError || new Error('Submission failed');
   }
 
   /**

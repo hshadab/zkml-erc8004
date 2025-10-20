@@ -92,6 +92,8 @@ node testMainnetTrade.js 0xCLASSIFICATION_ID_FROM_STEP_4
 
 ## Monitor Your Agent
 
+Archived note: For current Polygon usage, see POLYGON_README.md. The sections below may reference Base Sepolia and are kept for historical context.
+
 **View on BaseScan:**
 ```
 https://basescan.org/address/YOUR_TRADING_AGENT_ADDRESS

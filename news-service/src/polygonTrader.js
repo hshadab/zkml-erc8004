@@ -1,8 +1,12 @@
 import { ethers } from 'ethers';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { logger } from './logger.js';
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
 /**
  * Polygon Trading Agent Executor
@@ -13,10 +17,28 @@ export class PolygonTrader {
     this.rpcUrl = process.env.POLYGON_RPC_URL || 'https://polygon-rpc.com';
     this.agentAddress = process.env.POLYGON_AGENT;
     this.oracleAddress = process.env.POLYGON_ORACLE;
-    this.privateKey = process.env.ORACLE_PRIVATE_KEY;
+    // Sanitize private key (strip quotes/whitespace and enforce hex-only)
+    const pkRaw = (process.env.ORACLE_PRIVATE_KEY || '').replace(/["'\s]/g, '');
+    const body = pkRaw.startsWith('0x') ? pkRaw.slice(2) : pkRaw;
+    const hexOnly = body.replace(/[^0-9a-fA-F]/g, '');
+    this.privateKey = '0x' + hexOnly;
 
-    this.provider = new ethers.JsonRpcProvider(this.rpcUrl);
+    // Create custom FetchRequest with extended timeout for WSL2 compatibility
+    const fetchReq = new ethers.FetchRequest(this.rpcUrl);
+    fetchReq.timeout = 180000; // 180 second timeout
+
+    // Explicitly specify Polygon PoS Mainnet network (Chain ID: 137)
+    const network = {
+      name: 'matic',
+      chainId: 137
+    };
+
+    this.provider = new ethers.JsonRpcProvider(fetchReq, network, {
+      staticNetwork: true
+    });
     this.wallet = new ethers.Wallet(this.privateKey, this.provider);
+    this.provider.polling = true;
+    this.provider.pollingInterval = 4000;
 
     // TradingAgent ABI
     this.agentAbi = [
@@ -48,14 +70,48 @@ export class PolygonTrader {
     logger.info(`Classification ID: ${classificationId}`);
 
     try {
-      // Execute trade
+      // Execute trade with retry and fee bump
       logger.info(`\n📤 Calling TradingAgent.reactToNews()...`);
-      const tx = await this.agent.reactToNews(classificationId, { gasLimit: 500000 });
+      const maxAttempts = 3;
+      const baseGasLimit = 1000000n; // Increased for QuickSwap V2 swap + contract logic
+      const nonce = await this.provider.getTransactionCount(this.wallet.address, 'latest');
+      let tx, receipt;
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          const fee = await this.provider.getFeeData();
+          const bump = 1 + (attempt - 1) * 0.25;
+          const maxPriorityFeePerGas = fee.maxPriorityFeePerGas
+            ? BigInt(Math.ceil(Number(fee.maxPriorityFeePerGas) * bump))
+            : 2_000_000_000n;
+          const maxFeePerGas = fee.maxFeePerGas
+            ? BigInt(Math.ceil(Number(fee.maxFeePerGas) * bump))
+            : 30_000_000_000n;
 
-      logger.info(`   TX submitted: ${tx.hash}`);
-      logger.info(`   🔗 https://polygonscan.com/tx/${tx.hash}`);
+          tx = await this.agent.reactToNews(classificationId, {
+            gasLimit: baseGasLimit,
+            type: 2,
+            maxPriorityFeePerGas,
+            maxFeePerGas,
+            nonce
+          });
 
-      const receipt = await tx.wait();
+          logger.info(`   TX submitted: ${tx.hash}`);
+          logger.info(`   🔗 https://polygonscan.com/tx/${tx.hash}`);
+
+          receipt = await this.provider.waitForTransaction(tx.hash, 1, 180000);
+          if (!receipt) throw new Error('Transaction wait timeout');
+          break;
+        } catch (error) {
+          const msg = (error && error.message) ? error.message.toLowerCase() : '';
+          logger.warn(`   ❌ Attempt ${attempt} failed: ${error.message}`);
+          if (attempt < maxAttempts && (msg.includes('timeout') || msg.includes('network'))) {
+            await new Promise(r => setTimeout(r, 1000 * attempt));
+            continue;
+          }
+          throw error;
+        }
+      }
+
       logger.info(`   ✅ Trade executed! Gas used: ${receipt.gasUsed}`);
 
       // Parse trade event
@@ -80,17 +136,19 @@ export class PolygonTrader {
         logger.info(`   Timestamp:  ${new Date(Number(parsed.args.timestamp) * 1000).toISOString()}`);
       }
 
-      // Get updated stats
-      const totalTrades = await this.agent.getTotalTrades();
-      const profitLoss = await this.agent.getProfitLoss();
+      // Get updated stats (best-effort; some versions may not expose these views)
+      let totalTrades = 0n;
+      let profitLoss = 0n;
+      try { totalTrades = await this.agent.getTotalTrades(); } catch {}
+      try { profitLoss = await this.agent.getProfitLoss(); } catch {}
 
       logger.info(`\n📈 Agent Statistics:`);
       logger.info(`   Total Trades: ${totalTrades}`);
       logger.info(`   P&L: ${ethers.formatEther(profitLoss)} MATIC`);
 
       // Calculate gas cost
-      const gasPrice = receipt.gasPrice;
-      const gasCost = gasPrice * receipt.gasUsed;
+      const gasPrice = receipt.gasPrice || 0n;
+      const gasCost = gasPrice * (receipt.gasUsed || 0n);
       const costMATIC = ethers.formatEther(gasCost);
       const costUSD = (Number(costMATIC) * 0.75).toFixed(4); // Assuming $0.75/MATIC
 
@@ -102,7 +160,7 @@ export class PolygonTrader {
 
       return {
         txHash: tx.hash,
-        gasUsed: receipt.gasUsed.toString(),
+        gasUsed: (receipt.gasUsed || 0n).toString(),
         action: tradeEvent ? parsed.args.action : 'unknown',
         totalTrades: totalTrades.toString(),
         profitLoss: ethers.formatEther(profitLoss)
@@ -110,6 +168,7 @@ export class PolygonTrader {
 
     } catch (error) {
       logger.error(`❌ Trade execution failed: ${error.message}`);
+      // Surface best-effort result if tx sent
       throw error;
     }
   }
