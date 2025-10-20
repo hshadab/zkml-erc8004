@@ -589,6 +589,78 @@
             display: inline-block;
             max-width: 100%;
         }
+
+        /* zkML Proof Generation Banner */
+        .proof-generation-banner {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, rgba(91, 140, 255, 0.95), rgba(77, 226, 207, 0.95));
+            backdrop-filter: blur(10px);
+            border: 2px solid var(--accent-teal);
+            border-radius: 12px;
+            padding: 16px 32px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            gap: 16px;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .proof-generation-banner.active {
+            display: flex;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        .proof-spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .proof-banner-text {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .proof-banner-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .proof-banner-subtitle {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .proof-timer {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            font-weight: 700;
+            color: white;
+            min-width: 80px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -605,6 +677,16 @@
             </div>
         </div>
     </header>
+
+    <!-- zkML Proof Generation Banner -->
+    <div class="proof-generation-banner" id="proof-banner">
+        <div class="proof-spinner"></div>
+        <div class="proof-banner-text">
+            <div class="proof-banner-title">Generating zkML Proof</div>
+            <div class="proof-banner-subtitle">ONNX Inference → JOLT Proof → Groth16 Wrapper → On-Chain</div>
+        </div>
+        <div class="proof-timer" id="proof-timer">0s</div>
+    </div>
 
     <!-- Main Content -->
     <div class="container">
@@ -1098,6 +1180,94 @@
         }
 
         animateWorkflow();
+
+        // Proof Generation Banner Management
+        let proofStartTime = null;
+        let proofTimerInterval = null;
+        let lastClassificationCount = 0;
+
+        async function checkProofGeneration() {
+            try {
+                const response = await fetch(`${API_URL}/api/stats`);
+                const data = await response.json();
+                const currentCount = parseInt(data.totalClassifications) || 0;
+
+                // If classification count increased, a proof just completed
+                if (currentCount > lastClassificationCount) {
+                    hideProofBanner();
+                    lastClassificationCount = currentCount;
+                }
+            } catch (error) {
+                console.error('Error checking proof generation:', error);
+            }
+        }
+
+        function showProofBanner() {
+            const banner = document.getElementById('proof-banner');
+            if (!banner.classList.contains('active')) {
+                banner.classList.add('active');
+                proofStartTime = Date.now();
+
+                // Start timer
+                if (proofTimerInterval) clearInterval(proofTimerInterval);
+                proofTimerInterval = setInterval(updateProofTimer, 100);
+            }
+        }
+
+        function hideProofBanner() {
+            const banner = document.getElementById('proof-banner');
+            banner.classList.remove('active');
+
+            if (proofTimerInterval) {
+                clearInterval(proofTimerInterval);
+                proofTimerInterval = null;
+            }
+            proofStartTime = null;
+        }
+
+        function updateProofTimer() {
+            if (!proofStartTime) return;
+
+            const elapsed = Math.floor((Date.now() - proofStartTime) / 1000);
+            const timerEl = document.getElementById('proof-timer');
+            timerEl.textContent = `${elapsed}s`;
+
+            // Auto-hide after 60 seconds (proof likely failed or completed elsewhere)
+            if (elapsed > 60) {
+                hideProofBanner();
+            }
+        }
+
+        // Simulated demo: Show proof banner periodically to demonstrate the feature
+        // In production, this would be triggered by backend events
+        function startProofDemo() {
+            // Show banner for 25 seconds every 5 minutes to demonstrate
+            setInterval(() => {
+                showProofBanner();
+                setTimeout(() => {
+                    hideProofBanner();
+                    // Trigger dashboard reload to show new data
+                    loadDashboard();
+                }, 25000); // 25 seconds (typical proof generation time)
+            }, 300000); // Every 5 minutes
+        }
+
+        // Check for proof generation status periodically
+        setInterval(checkProofGeneration, 5000);
+
+        // Initialize proof generation tracking
+        (async () => {
+            try {
+                const response = await fetch(`${API_URL}/api/stats`);
+                const data = await response.json();
+                lastClassificationCount = parseInt(data.totalClassifications) || 0;
+            } catch (error) {
+                console.error('Error initializing proof tracking:', error);
+            }
+        })();
+
+        // Note: In production, the backend would emit events when proof generation starts
+        // For now, users can manually trigger by visiting the service
     </script>
 </body>
 </html>
