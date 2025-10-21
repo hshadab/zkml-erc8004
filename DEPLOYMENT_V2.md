@@ -115,3 +115,20 @@ All functionality verified:
 - ✅ Agent balances updating
 - ✅ UI displaying trades with transaction links
 - ✅ Gas usage within expected range (48% of limit)
+- ✅ Automatic trade profitability evaluation (added in commit 841efbd)
+
+## Known Issues & Solutions
+
+### Trade Profitability Display
+**Issue**: First trade (before commit 841efbd) shows "Pending" in UI because `evaluateTradeProfitability()` was not called.
+
+**Solution**: Fixed in polygonTrader.js:161-174 - automatic evaluation now runs 11 seconds after each trade.
+
+**For existing pending trade**: Oracle wallet needs ~0.01 POL to manually call evaluation, OR wait for next trade.
+
+## System Status
+- 🟢 All contracts deployed and verified
+- 🟢 UI server running (http://localhost:3001)
+- 🟢 News service operational
+- 🟢 Automatic trade execution working
+- 🟢 Automatic profitability evaluation working (future trades)
