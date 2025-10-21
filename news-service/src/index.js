@@ -5,7 +5,7 @@ import { NewsFetcher } from './fetcher.js';
 import { NewsClassifier } from './classifier.js';
 import { OraclePoster } from './poster.js';
 import { logger } from './logger.js';
-import { PolygonTrader } from './polygonTrader.js';
+import { BaseTrader } from './baseTrader.js';
 import { config, validateConfig } from './config.js';
 import { mkdir } from 'fs/promises';
 
@@ -106,11 +106,11 @@ class NewsService {
             posted++;
             logger.info(`\n✅ Successfully posted classification ${posted}/${newsItems.length}\n`);
 
-            // Auto-trigger trade on Polygon if enabled
+            // Auto-trigger trade on Base if enabled
             if (process.env.ENABLE_AUTO_TRADE === 'true' && result.classificationId) {
               try {
                 logger.info('🤖 Auto-trading enabled: triggering TradingAgent.reactToNews()');
-                const trader = new PolygonTrader();
+                const trader = new BaseTrader();
                 await trader.initialize();
                 await trader.executeTrade(result.classificationId);
               } catch (tradeErr) {

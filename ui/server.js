@@ -18,11 +18,11 @@ app.use((req, res, next) => {
     next();
 });
 
-// Contract addresses (Polygon deployment)
-const REGISTRY_ADDRESS = process.env.POLYGON_REGISTRY || '0x078C7aFbFADAC9BE82F372e867231d605A8d3428';
-const ORACLE_ADDRESS = process.env.POLYGON_ORACLE || '0x037B74A3c354522312C67a095D043347E9Ffc40f';
-const AGENT_ADDRESS = process.env.POLYGON_AGENT || '0x2e091b211a0d2a7428c83909b3293c42f2af9e1b';
-const VERIFIER_ADDRESS = process.env.POLYGON_VERIFIER || '0x05d1A031CC20424644445925D5e5E3Fc5de27E37';
+// Contract addresses (Base Mainnet deployment)
+const REGISTRY_ADDRESS = process.env.ZKML_VERIFICATION_REGISTRY || '0xb274D9bdbEFD5e645a1E6Df94F4ff62838625230';
+const ORACLE_ADDRESS = process.env.NEWS_ORACLE_ADDRESS || '0x93Efb961780a19052A2fBd186A86b7edf073EFb6';
+const AGENT_ADDRESS = process.env.TRADING_AGENT_ADDRESS || '0xBC2a8f872f02CCd2356F235675f756A4FdCAd81d';
+const VERIFIER_ADDRESS = process.env.NEWS_VERIFIER_ADDRESS || '0x42706c5d80CC618e51d178bd9869894692A77a5c';
 
 // Load tx hash cache
 let txCache = {};
@@ -30,14 +30,14 @@ try {
   txCache = JSON.parse(fs.readFileSync('/home/hshadab/zkml-erc8004/ui/tx-cache.json', 'utf8'));
 } catch(e) { txCache = {}; }
 
-const AGENT_DEPLOYMENT_BLOCK = 77944676; // V2 TradingAgent deployment block
+const AGENT_DEPLOYMENT_BLOCK = 0; // Base Mainnet deployment block (not needed for Base)
 
 // Multiple RPC endpoints for fallback (in priority order)
 const RPC_URLS = [
-    process.env.POLYGON_RPC_URL || 'https://polygon-rpc.com',
-    'https://polygon.llamarpc.com',
-    'https://rpc-mainnet.maticvigil.com',
-    'https://polygon-mainnet.public.blastapi.io'
+    process.env.BASE_MAINNET_RPC_URL || 'https://mainnet.base.org',
+    'https://base.llamarpc.com',
+    'https://base-mainnet.public.blastapi.io',
+    'https://base.publicnode.com'
 ];
 
 // Initialize provider with timeout configuration
@@ -58,10 +58,10 @@ function createProvider(rpcUrl) {
         return false;
     };
 
-    // Explicitly specify Polygon PoS Mainnet network (Chain ID: 137)
+    // Explicitly specify Base Mainnet network (Chain ID: 8453)
     const network = {
-        name: 'matic',
-        chainId: 137
+        name: 'base',
+        chainId: 8453
     };
 
     // Create provider with custom fetch request
@@ -285,7 +285,7 @@ app.get('/api/classifications', async (req, res) => {
                     timestamp: classification.timestamp.toString(),
                     oracleTokenId: classification.oracleTokenId.toString(),
                     txHash: '0x0000000000000000000000000000000000000000000000000000000000000000', // Cannot query old events with Alchemy Free tier
-                    explorerUrl: `https://polygonscan.com/address/${ORACLE_ADDRESS}`,
+                    explorerUrl: `https://basescan.org/address/${ORACLE_ADDRESS}`,
                     isZkmlVerified: true // Assume verified if classification exists in contract
                 };
             });
@@ -317,14 +317,14 @@ app.get('/api/trades', async (req, res) => {
             const trades = await Promise.all(
                 [...recentTrades].reverse().map(async (trade) => {
                     let txHash = '0x';
-                    let explorerUrl = `https://polygonscan.com/address/${AGENT_ADDRESS}`;
+                    let explorerUrl = `https://basescan.org/address/${AGENT_ADDRESS}`;
 
                     // Try to find the event for this specific classification
                     try {
                         // Check cache first
                         if (txCache[trade.classificationId]) {
                             txHash = txCache[trade.classificationId];
-                            explorerUrl = `https://polygonscan.com/tx/${txHash}`;
+                            explorerUrl = `https://basescan.org/tx/${txHash}`;
                         }
                     } catch (err) {
                         console.error('Error finding event for classification:', trade.classificationId, err.message);
@@ -444,7 +444,7 @@ app.get('/api/addresses', (req, res) => {
         agent: AGENT_ADDRESS,
         verifier: VERIFIER_ADDRESS,
         rpcUrl: RPC_URLS[currentRpcIndex],
-        network: 'Polygon PoS Mainnet'
+        network: 'Base Mainnet'
     });
 });
 
@@ -488,7 +488,7 @@ app.get('/api/latest-classification', async (req, res) => {
                     timestamp: classification.timestamp.toString(),
                     oracleTokenId: classification.oracleTokenId.toString(),
                     txHash: '0x0000000000000000000000000000000000000000000000000000000000000000',
-                    explorerUrl: `https://polygonscan.com/address/${ORACLE_ADDRESS}`,
+                    explorerUrl: `https://basescan.org/address/${ORACLE_ADDRESS}`,
                     isZkmlVerified: true
                 }
             };

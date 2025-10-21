@@ -5,16 +5,18 @@ import "./interfaces/INewsOracle.sol";
 import "./interfaces/IZkMLVerificationRegistry.sol";
 
 /**
- * @title TradingAgentPolygonV2
- * @notice Trading agent using QuickSwap V2 router (proven to work)
+ * @title TradingAgentBase
+ * @notice Trading agent for Base Mainnet using Uniswap V3
+ * @dev Integrates with Uniswap V3 SwapRouter for ETH/USDC trading
  */
-contract TradingAgentPolygonV2 {
+contract TradingAgentBase {
     address public owner;
     INewsOracle public immutable newsOracle;
     IZkMLVerificationRegistry public immutable verificationRegistry;
-    address public immutable swapRouter; // QuickSwap V2 Router
-    address public constant WETH = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270; // WPOL (formerly WMATIC)
+    address public immutable swapRouter; // Uniswap V3 SwapRouter
+    address public immutable WETH;
     address public immutable USDC;
+    uint24 public immutable poolFee; // Uniswap V3 pool fee tier
 
     uint256 public agentTokenId;
     uint256 public minOracleReputation = 50;
@@ -54,12 +56,21 @@ contract TradingAgentPolygonV2 {
     modifier onlyOwner() { require(msg.sender == owner, "Only owner"); _; }
     modifier whenNotPaused() { require(!isPaused, "Paused"); _; }
 
-    constructor(address _newsOracle, address _verificationRegistry, address _swapRouter, address _usdc) {
+    constructor(
+        address _newsOracle,
+        address _verificationRegistry,
+        address _swapRouter,
+        address _weth,
+        address _usdc,
+        uint24 _poolFee
+    ) {
         owner = msg.sender;
         newsOracle = INewsOracle(_newsOracle);
         verificationRegistry = IZkMLVerificationRegistry(_verificationRegistry);
         swapRouter = _swapRouter;
+        WETH = _weth;
         USDC = _usdc;
+        poolFee = _poolFee;
     }
 
     function setAgentTokenId(uint256 _tokenId) external onlyOwner {
@@ -106,62 +117,69 @@ contract TradingAgentPolygonV2 {
 
     function _executeBullishTrade(bytes32 classificationId) internal {
         uint256 usdcBalance = _getTokenBalance(USDC);
-        if (usdcBalance >= 1e6) {
-            uint256 amountIn = usdcBalance / 10;
-            if (amountIn < 1e6) amountIn = 1e6;
+        if (usdcBalance >= 1e6) { // At least $1 USDC
+            uint256 amountIn = usdcBalance / 10; // Trade 10% of USDC balance
+            if (amountIn < 1e6) amountIn = 1e6; // Minimum $1
 
-            uint256 amountOut = _swapV2(USDC, WETH, amountIn, 0);
+            uint256 amountOut = _swapV3(USDC, WETH, amountIn, 0);
 
             Trade storage t = trades[classificationId];
-            t.action = "BUY_POL";
+            t.action = "BUY_ETH";
             t.tokenIn = USDC;
             t.tokenOut = WETH;
             t.amountIn = amountIn;
             t.amountOut = amountOut;
-            emit TradeExecuted(classificationId, "BUY_POL", USDC, WETH, amountIn, amountOut, block.timestamp);
+            emit TradeExecuted(classificationId, "BUY_ETH", USDC, WETH, amountIn, amountOut, block.timestamp);
         }
     }
 
     function _executeBearishTrade(bytes32 classificationId) internal {
-        uint256 polBalance = _getTokenBalance(WETH);
-        if (polBalance >= 0.001 ether) {
-            uint256 amountIn = polBalance / 10;
-            if (amountIn < 0.001 ether) amountIn = 0.001 ether;
+        uint256 ethBalance = _getTokenBalance(WETH);
+        if (ethBalance >= 0.001 ether) { // At least 0.001 ETH
+            uint256 amountIn = ethBalance / 10; // Trade 10% of ETH balance
+            if (amountIn < 0.001 ether) amountIn = 0.001 ether; // Minimum 0.001 ETH
 
-            uint256 amountOut = _swapV2(WETH, USDC, amountIn, 0);
+            uint256 amountOut = _swapV3(WETH, USDC, amountIn, 0);
 
             Trade storage t = trades[classificationId];
-            t.action = "SELL_POL";
+            t.action = "SELL_ETH";
             t.tokenIn = WETH;
             t.tokenOut = USDC;
             t.amountIn = amountIn;
             t.amountOut = amountOut;
-            emit TradeExecuted(classificationId, "SELL_POL", WETH, USDC, amountIn, amountOut, block.timestamp);
+            emit TradeExecuted(classificationId, "SELL_ETH", WETH, USDC, amountIn, amountOut, block.timestamp);
         }
     }
 
-    function _swapV2(address tokenIn, address tokenOut, uint256 amountIn, uint256 amountOutMin) internal returns (uint256) {
+    /**
+     * @notice Executes swap using Uniswap V3 SwapRouter
+     * @dev Uses exactInputSingle for single-hop swaps
+     */
+    function _swapV3(address tokenIn, address tokenOut, uint256 amountIn, uint256 amountOutMin) internal returns (uint256) {
         _approveToken(tokenIn, swapRouter, amountIn);
 
-        address[] memory path = new address[](2);
-        path[0] = tokenIn;
-        path[1] = tokenOut;
+        // Uniswap V3 SwapRouter.exactInputSingle parameters
+        bytes memory params = abi.encode(
+            tokenIn,              // tokenIn
+            tokenOut,             // tokenOut
+            poolFee,              // fee
+            address(this),        // recipient
+            block.timestamp + 300, // deadline (5 minutes)
+            amountIn,             // amountIn
+            amountOutMin,         // amountOutMinimum
+            0                     // sqrtPriceLimitX96 (0 = no limit)
+        );
 
-        // QuickSwap V2 swapExactTokensForTokens
         (bool success, bytes memory data) = swapRouter.call(
             abi.encodeWithSignature(
-                "swapExactTokensForTokens(uint256,uint256,address[],address,uint256)",
-                amountIn,
-                amountOutMin,
-                path,
-                address(this),
-                block.timestamp + 300
+                "exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))",
+                params
             )
         );
 
         require(success, "Swap failed");
-        uint256[] memory amounts = abi.decode(data, (uint256[]));
-        return amounts[amounts.length - 1];
+        uint256 amountOut = abi.decode(data, (uint256));
+        return amountOut;
     }
 
     function evaluateTradeProfitability(bytes32 classificationId) external {
@@ -177,10 +195,10 @@ contract TradingAgentPolygonV2 {
 
         if (profitable) { profitableTrades++; } else { unprofitableTrades++; }
 
-        int256 pl=0;
-        if (t.portfolioValueBefore>0){
-            int256 diff=int256(afterVal)-int256(t.portfolioValueBefore);
-            pl=(diff*100)/int256(t.portfolioValueBefore);
+        int256 pl = 0;
+        if (t.portfolioValueBefore > 0) {
+            int256 diff = int256(afterVal) - int256(t.portfolioValueBefore);
+            pl = (diff * 100) / int256(t.portfolioValueBefore);
         }
 
         emit TradeProfitabilityDetermined(classificationId, profitable, t.portfolioValueBefore, afterVal, pl);
@@ -208,7 +226,7 @@ contract TradingAgentPolygonV2 {
         }
     }
 
-    function getPortfolio() external view returns (uint256 polBalance, uint256 usdcBalance) {
+    function getPortfolio() external view returns (uint256 ethBalance, uint256 usdcBalance) {
         return (_getTokenBalance(WETH), _getTokenBalance(USDC));
     }
 
@@ -218,11 +236,12 @@ contract TradingAgentPolygonV2 {
 
     function _calculatePortfolioValue() internal view returns (uint256) {
         uint256 usdcBalance = _getTokenBalance(USDC);
-        uint256 polBalance = _getTokenBalance(WETH);
+        uint256 ethBalance = _getTokenBalance(WETH);
 
-        // Simple: assume 1 POL = $0.75 for estimation
-        uint256 polValueInUsdc = (polBalance * 75) / 100; // Very rough estimate
-        return usdcBalance + polValueInUsdc;
+        // Estimate ETH value in USDC (assume 1 ETH = $1800 for rough estimate)
+        // In production, would query Uniswap V3 pool or oracle
+        uint256 ethValueInUsdc = (ethBalance * 1800) / 1e18;
+        return usdcBalance + ethValueInUsdc;
     }
 
     function getTradeDetails(bytes32 classificationId) external view returns (Trade memory) {
