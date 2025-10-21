@@ -4,8 +4,8 @@
  * @author zkML Trading System
  */
 
-const { ethers } = require('ethers');
-const logger = require('./utils/logger');
+import { ethers } from 'ethers';
+import { logger } from './logger.js';
 
 /**
  * BaseTrader - Handles automated trading on Base Mainnet
@@ -39,8 +39,8 @@ class BaseTrader {
     ];
 
     this.oracleABI = [
-      'function getClassification(bytes32 classificationId) external view returns (tuple(bytes32 id, uint256 oracleTokenId, uint8 sentiment, uint256 confidence, string newsTitle, string newsUrl, uint256 timestamp, bool exists))',
-      'event NewsClassified(bytes32 indexed classificationId, uint256 indexed oracleTokenId, uint8 sentiment, uint256 confidence, string newsTitle)'
+      'function getClassification(bytes32 classificationId) external view returns (tuple(bytes32 id, string headline, uint8 sentiment, uint8 confidence, bytes32 proofHash, uint256 timestamp, uint256 oracleTokenId))',
+      'event NewsClassified(bytes32 indexed classificationId, string headline, uint8 sentiment, uint8 confidence, bytes32 proofHash, uint256 timestamp, uint256 indexed oracleTokenId)'
     ];
 
     // Initialize contracts
@@ -50,6 +50,8 @@ class BaseTrader {
     // Trading state
     this.isListening = false;
     this.processedClassifications = new Set();
+    this.lastCheckedBlock = null;
+    this.pollingInterval = null;
 
     logger.info('🔷 BaseTrader initialized');
     logger.info(`   Oracle: ${this.oracleAddress}`);
@@ -58,7 +60,7 @@ class BaseTrader {
   }
 
   /**
-   * Start listening for NewsClassified events
+   * Start listening for NewsClassified events using polling
    */
   async startListening() {
     if (this.isListening) {
@@ -67,20 +69,62 @@ class BaseTrader {
     }
 
     this.isListening = true;
-    logger.info('🎧 Starting to listen for Base Mainnet trading signals...');
+    logger.info('🎧 Starting to poll for Base Mainnet trading signals...');
 
-    // Listen for NewsClassified events
-    this.oracle.on('NewsClassified', async (classificationId, oracleTokenId, sentiment, confidence, newsTitle, event) => {
+    // Get current block to start polling from
+    const currentBlock = await this.provider.getBlockNumber();
+    this.lastCheckedBlock = currentBlock;
+    logger.info(`   Starting from block: ${currentBlock}`);
+
+    // Poll for new events every 10 seconds
+    this.pollingInterval = setInterval(async () => {
       try {
-        logger.info(`\n📰 New classification detected: ${newsTitle}`);
+        await this._pollForEvents();
+      } catch (error) {
+        logger.error(`❌ Error polling for events: ${error.message}`);
+      }
+    }, 10000); // Poll every 10 seconds
+
+    logger.info('✅ BaseTrader is now polling for events on Base Mainnet (every 10s)');
+  }
+
+  /**
+   * Poll for new NewsClassified events
+   */
+  async _pollForEvents() {
+    const latestBlock = await this.provider.getBlockNumber();
+
+    // Only query if there are new blocks
+    if (latestBlock <= this.lastCheckedBlock) {
+      return;
+    }
+
+    // Query for NewsClassified events in the new block range
+    const events = await this.oracle.queryFilter(
+      'NewsClassified',
+      this.lastCheckedBlock + 1,
+      latestBlock
+    );
+
+    if (events.length > 0) {
+      logger.info(`\n🔍 Found ${events.length} new classification(s) in blocks ${this.lastCheckedBlock + 1} to ${latestBlock}`);
+    }
+
+    // Process each event
+    for (const event of events) {
+      try {
+        const { classificationId, headline, sentiment, confidence, oracleTokenId } = event.args;
+
+        logger.info(`\n📰 New classification detected: ${headline}`);
         logger.info(`   Classification ID: ${classificationId}`);
         logger.info(`   Sentiment: ${this._getSentimentLabel(sentiment)} (${sentiment})`);
         logger.info(`   Confidence: ${confidence}%`);
+        logger.info(`   Oracle Token ID: ${oracleTokenId}`);
 
         // Check if already processed
         if (this.processedClassifications.has(classificationId)) {
           logger.info('   ⏭️  Already processed, skipping');
-          return;
+          continue;
         }
 
         this.processedClassifications.add(classificationId);
@@ -91,9 +135,10 @@ class BaseTrader {
       } catch (error) {
         logger.error(`❌ Error processing classification: ${error.message}`);
       }
-    });
+    }
 
-    logger.info('✅ BaseTrader is now listening for events on Base Mainnet');
+    // Update last checked block
+    this.lastCheckedBlock = latestBlock;
   }
 
   /**
@@ -214,9 +259,9 @@ class BaseTrader {
    */
   _getSentimentLabel(sentiment) {
     const sentiments = {
-      0: 'NEUTRAL',
-      1: 'GOOD_NEWS',
-      2: 'BAD_NEWS'
+      0: 'BAD_NEWS',
+      1: 'NEUTRAL_NEWS',
+      2: 'GOOD_NEWS'
     };
     return sentiments[sentiment] || 'UNKNOWN';
   }
@@ -227,9 +272,12 @@ class BaseTrader {
   async stopListening() {
     if (!this.isListening) return;
 
-    this.oracle.removeAllListeners('NewsClassified');
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
+    }
     this.isListening = false;
-    logger.info('🛑 BaseTrader stopped listening');
+    logger.info('🛑 BaseTrader stopped polling');
   }
 
   /**
@@ -242,4 +290,4 @@ class BaseTrader {
   }
 }
 
-module.exports = BaseTrader;
+export { BaseTrader };
