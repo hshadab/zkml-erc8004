@@ -4,7 +4,7 @@ services:
     name: zkml-news-service
     env: node
     region: oregon
-    plan: free
+    plan: starter
     buildCommand: cd news-service && npm install
     startCommand: cd news-service && node src/index.js
     healthCheckPath: /status
@@ -80,7 +80,7 @@ services:
     name: zkml-ui
     env: node
     region: oregon
-    plan: free
+    plan: starter
     buildCommand: cd ui && npm install
     startCommand: cd ui && node server.js
     healthCheckPath: /health
@@ -112,7 +112,7 @@ services:
     name: zkml-base-trader
     env: node
     region: oregon
-    plan: free
+    plan: starter
     buildCommand: cd news-service && npm install
     startCommand: cd news-service && node src/startBaseTrader.js
     envVars:

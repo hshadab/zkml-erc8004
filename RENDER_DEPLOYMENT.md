@@ -1,6 +1,6 @@
-# Deploying to Render.com (Free Tier)
+# Deploying to Render.com (Pro Plan)
 
-This guide will help you deploy the zkML News Oracle service to Render.com's free tier.
+This guide will help you deploy the zkML News Oracle service to Render.com using the Pro plan.
 
 ## Prerequisites
 
@@ -77,31 +77,22 @@ After deployment, your services will be available at:
 
 ## Important Notes
 
-### Free Tier Limitations
+### Pro Plan Benefits
 
-- Services sleep after 15 minutes of inactivity
-- 750 hours/month of runtime per service
-- Services take ~30 seconds to wake up from sleep
-- Limited CPU and memory
+- **Always-on services**: No sleep/spin-down after inactivity
+- **Better performance**: Enhanced CPU and memory allocation
+- **Faster builds**: Priority build queue
+- **24/7 uptime**: Services stay running continuously
+- **Better reliability**: Higher resource limits
 
-### Cost-Saving Tips
+### Performance Tips
 
-1. **Disable BaseTrader worker** if you don't need continuous trading monitoring
-2. **Increase POLL_INTERVAL_MINUTES** to reduce API calls and resource usage
-3. Services will auto-sleep when not in use
-
-### Keeping Services Awake (Optional)
-
-To prevent services from sleeping, you can:
-
-1. Use a free uptime monitoring service like UptimeRobot
-2. Ping your health endpoints every 10 minutes:
+1. **Enable BaseTrader worker** for continuous autonomous trading monitoring
+2. **Optimize POLL_INTERVAL_MINUTES** for your use case (default: 5 minutes)
+3. **Monitor resource usage** via Render dashboard for optimization opportunities
+4. **Use health endpoints** for monitoring and alerting:
    - `https://zkml-news-service.onrender.com/status`
    - `https://zkml-ui.onrender.com/health`
-
-### Manual Wake-Up
-
-If services are sleeping, simply visit the URL and wait 30 seconds for it to wake up.
 
 ## Troubleshooting
 
