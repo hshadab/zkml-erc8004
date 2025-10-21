@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>zkML News Oracle - ERC-8004 Demo</title>
+    <title>ERC-8004 Trustless zkML Agents</title>
     <style>
         :root {
             --bg-primary: #0a0e1a;
@@ -733,27 +733,27 @@
     <header class="header">
         <div class="header-content">
             <div class="logo-section">
-                <div class="logo">zkML News Oracle</div>
-                <span class="badge">ERC-8004 Demo</span>
+                <img src="https://cdn.prod.website-files.com/65d52b07d5bc41614daa723f/665df12739c532f45b665fe7_logo-novanet.svg" alt="NovaNET" style="height: 40px;">
+                <span style="font-size: 18px; font-weight: 600; color: var(--text-primary);">ERC-8004 Trustless zkML Agents</span>
             </div>
             <div style="display: flex; align-items: center; gap: 16px;">
                 <div class="status-indicator">
                     <div class="status-dot"></div>
-                    <span id="status-text">Live on Base Mainnet</span>
+                    <span id="status-text" style="font-size: 16px; font-weight: 600;">Live on Base Mainnet</span>
                 </div>
                 <!-- API Docs Widget -->
                 <div style="background: var(--bg-tertiary); border: 1px solid var(--accent-blue); border-radius: 8px; padding: 8px 12px; cursor: pointer; transition: all 0.2s;" onclick="document.getElementById('api-docs-modal').style.display = 'flex'" onmouseover="this.style.borderColor='var(--accent-teal)'" onmouseout="this.style.borderColor='var(--accent-blue)'">
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-size: 14px;">📖</span>
-                        <span style="font-size: 13px; font-weight: 600; color: var(--accent-blue);">API Docs</span>
+                        <span style="font-size: 16px;">📖</span>
+                        <span style="font-size: 16px; font-weight: 600; color: var(--accent-blue);">API Docs</span>
                     </div>
                 </div>
-                <!-- X402 Compact Widget -->
+                <!-- x402 Compact Widget -->
                 <div style="background: var(--bg-tertiary); border: 1px solid var(--accent-teal); border-radius: 8px; padding: 8px 12px; cursor: pointer; transition: all 0.2s;" onclick="document.getElementById('x402-modal').style.display = 'flex'">
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-size: 14px;">💳</span>
-                        <span style="font-size: 13px; font-weight: 600; color: var(--accent-teal);">X402 Service</span>
-                        <span style="font-size: 12px; color: var(--text-secondary);" id="x402-widget-price">$0.25</span>
+                        <span style="font-size: 16px;">💳</span>
+                        <span style="font-size: 16px; font-weight: 600; color: var(--accent-teal);">x402 Service</span>
+                        <span style="font-size: 14px; color: var(--text-secondary);" id="x402-widget-price">$0.25</span>
                     </div>
                 </div>
             </div>
@@ -774,7 +774,7 @@
     <div class="container">
         <!-- Hero Section -->
         <section class="hero">
-            <h1>Verifiable AI News Classification</h1>
+            <h1>Verifiable DeFi Agents</h1>
             <p>zkML-powered sentiment analysis with on-chain proof verification and autonomous trading</p>
 
             <div class="workflow">
@@ -992,7 +992,7 @@
 
                 <div class="card-header" style="border: none; padding: 0; margin-bottom: 24px;">
                     <h2 class="card-title">
-                        💳 X402 Full Demo Experience
+                        💳 x402 Full Demo Experience
                         <span class="info-icon">ⓘ
                             <span class="tooltip">Pay $0.25 USDC to get the complete autonomous AI demo: zkML classification + cryptographic proof + live autonomous trade execution. Watch your payment trigger a real on-chain trade! Powered by HTTP 402 Payment Required protocol.</span>
                         </span>
@@ -1160,7 +1160,7 @@
                         <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 600;">EXAMPLE SUCCESS RESPONSE</div>
                         <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 11px; color: var(--text-primary); overflow-x: auto; line-height: 1.6;">{
   "success": true,
-  "service": "zkML News Classification + Autonomous Trading Demo (X402)",
+  "service": "zkML News Classification + Autonomous Trading Demo (x402)",
   "payment": {
     "verified": true,
     "txHash": "0x...",
@@ -1756,10 +1756,10 @@ console.log(result.classification);
         // Note: In production, the backend would emit events when proof generation starts
         // For now, users can manually trigger by visiting the service
 
-        // ===== X402 Payment Service Functions =====
+        // ===== x402 Payment Service Functions =====
 
         /**
-         * Load X402 pricing information
+         * Load x402 pricing information
          */
         async function loadX402Pricing() {
             try {
@@ -1774,16 +1774,16 @@ console.log(result.classification);
                 const recipientAddress = data.recipient || '0x4E3eD682f723DD133252aae032D32f1Ef7EEafb4';
                 document.getElementById('x402-recipient').textContent = recipientAddress;
 
-                console.log('💳 X402 pricing loaded:', data);
+                console.log('💳 x402 pricing loaded:', data);
             } catch (error) {
-                console.error('Error loading X402 pricing:', error);
+                console.error('Error loading x402 pricing:', error);
                 // Use fallback oracle wallet address on error
                 document.getElementById('x402-recipient').textContent = '0x4E3eD682f723DD133252aae032D32f1Ef7EEafb4';
             }
         }
 
         /**
-         * Submit X402 classification request
+         * Submit x402 classification request
          */
         async function submitX402Classification() {
             try {
@@ -1845,7 +1845,7 @@ console.log(result.classification);
                 }
 
             } catch (error) {
-                console.error('Error submitting X402 classification:', error);
+                console.error('Error submitting x402 classification:', error);
                 showX402Error(`Network error: ${error.message}`);
 
                 // Reset button
@@ -1856,7 +1856,7 @@ console.log(result.classification);
         }
 
         /**
-         * Display X402 classification results
+         * Display x402 classification results
          */
         function showX402Results(data) {
             const resultsDiv = document.getElementById('x402-results');
@@ -1918,7 +1918,7 @@ console.log(result.classification);
                 <!-- Service Info -->
                 <div style="padding: 16px; background: rgba(91, 140, 255, 0.1); border-radius: 8px; border-left: 4px solid var(--accent-blue);">
                     <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
-                        ℹ️ This classification was generated using <strong>JOLT-Atlas zkML</strong> with <strong>Groth16 proof</strong>, verified via <strong>X402 payment protocol</strong> on Base Mainnet.
+                        ℹ️ This classification was generated using <strong>JOLT-Atlas zkML</strong> with <strong>Groth16 proof</strong>, verified via <strong>x402 payment protocol</strong> on Base Mainnet.
                     </div>
                 </div>
             `;
@@ -1930,7 +1930,7 @@ console.log(result.classification);
         }
 
         /**
-         * Display X402 error message
+         * Display x402 error message
          */
         function showX402Error(message) {
             const errorDiv = document.getElementById('x402-error');
