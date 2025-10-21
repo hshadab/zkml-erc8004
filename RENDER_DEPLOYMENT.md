@@ -1,6 +1,17 @@
 # Deploying to Render.com (Pro Plan)
 
-This guide will help you deploy the zkML News Oracle service to Render.com using the Pro plan.
+This guide will help you deploy the zkML News Oracle service to Render.com using the Pro plan with an optimized 2-service architecture.
+
+## Architecture Overview
+
+This deployment uses **2 services** instead of 3:
+1. **zkml-combined-service** (Web): Combined backend API + frontend UI
+2. **zkml-base-trader** (Worker): Background autonomous trading worker
+
+This architecture provides:
+- **Cost savings**: ~$14/month vs ~$21/month (2 services instead of 3)
+- **Simpler management**: Fewer services to configure and monitor
+- **Optimal separation**: Web traffic separate from autonomous trading operations
 
 ## Prerequisites
 
@@ -34,46 +45,42 @@ git push -u origin main
 
 Render will automatically detect the `render.yaml` file. You need to set these **secret** environment variables in the Render dashboard:
 
-#### For zkml-news-service:
+#### For zkml-combined-service:
 
 Go to the service settings and add:
 - `BASE_MAINNET_RPC_URL`: Your Base Mainnet RPC endpoint (e.g., Alchemy)
 - `ORACLE_PRIVATE_KEY`: Your oracle wallet private key (starts with 0x)
 
-#### For zkml-ui:
+#### For zkml-base-trader (optional worker):
 
-Go to the service settings and add:
-- `BASE_MAINNET_RPC_URL`: Same as above
-
-#### For zkml-base-trader (optional):
-
-Same as news-service:
+Same as combined-service:
 - `BASE_MAINNET_RPC_URL`
 - `ORACLE_PRIVATE_KEY`
 
 ### 4. Deploy
 
 1. Click "Apply" to start the deployment
-2. Render will create 3 services:
-   - `zkml-news-service` (backend API)
-   - `zkml-ui` (frontend)
-   - `zkml-base-trader` (background worker)
+2. Render will create 2 services:
+   - `zkml-combined-service` (combined backend API + frontend UI)
+   - `zkml-base-trader` (background autonomous trading worker)
 
-### 5. Update UI to Point to Backend
+### 5. Access Your Deployment
 
-After deployment, you'll get URLs like:
-- Backend: `https://zkml-news-service.onrender.com`
-- Frontend: `https://zkml-ui.onrender.com`
+After deployment, you'll get the URL for your combined service:
+- **Combined Service**: `https://zkml-combined-service.onrender.com`
 
-The frontend is already configured to use `NEWS_SERVICE_URL` environment variable.
+This single service provides:
+- **Frontend UI** (port 3001): Accessible at the main URL
+- **Backend API** (port 3000): Accessible at `/status`, `/api/*` endpoints
+- **API Docs**: Available via the "📖 API Docs" button in the UI
 
 ## Service URLs
 
 After deployment, your services will be available at:
 
-- **Frontend UI**: `https://zkml-ui.onrender.com`
-- **News Service API**: `https://zkml-news-service.onrender.com`
-- **API Docs**: Available via the "📖 API Docs" button in the UI
+- **Combined Service (UI + API)**: `https://zkml-combined-service.onrender.com`
+- **Health Check**: `https://zkml-combined-service.onrender.com/api/health`
+- **API Status**: `https://zkml-combined-service.onrender.com/status`
 
 ## Important Notes
 

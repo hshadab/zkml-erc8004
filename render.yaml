@@ -1,13 +1,13 @@
 services:
-  # zkML News Service Backend
+  # zkML Combined Service (News Service + UI Frontend)
   - type: web
-    name: zkml-news-service
+    name: zkml-combined-service
     env: node
     region: oregon
     plan: starter
-    buildCommand: cd news-service && npm install
-    startCommand: cd news-service && node src/index.js
-    healthCheckPath: /status
+    buildCommand: cd news-service && npm install && cd ../ui && npm install
+    startCommand: bash start-combined.sh
+    healthCheckPath: /api/health
     envVars:
       # Blockchain Configuration (Base Mainnet)
       - key: BASE_MAINNET_RPC_URL
@@ -50,8 +50,6 @@ services:
         value: 60
       - key: MAX_CLASSIFICATIONS_PER_CYCLE
         value: 5
-      - key: PORT
-        value: 3000
 
       # JOLT-Atlas Configuration
       - key: JOLT_ATLAS_PATH
@@ -70,38 +68,6 @@ services:
       # zkML Proof Configuration
       - key: USE_REAL_PROOFS
         value: "true"
-
-      # Node Environment
-      - key: NODE_ENV
-        value: production
-
-  # zkML UI Frontend
-  - type: web
-    name: zkml-ui
-    env: node
-    region: oregon
-    plan: starter
-    buildCommand: cd ui && npm install
-    startCommand: cd ui && node server.js
-    healthCheckPath: /health
-    envVars:
-      # API Configuration
-      - key: NEWS_SERVICE_URL
-        value: https://zkml-news-service.onrender.com
-      - key: PORT
-        value: 3001
-
-      # Blockchain Configuration (Base Mainnet for UI monitoring)
-      - key: BASE_MAINNET_RPC_URL
-        sync: false
-
-      # Contract Addresses (same as backend)
-      - key: NEWS_ORACLE_CONTRACT_ADDRESS
-        value: 0xe92c7aE9E894a8701583a43363676ff878d5b6ed
-      - key: VERIFICATION_REGISTRY_ADDRESS
-        value: 0x909fbFbFE9F7Bdb4d1a6e02F2E91d3f367555b07
-      - key: TRADING_AGENT_ADDRESS
-        value: 0x0D43DC16eFC1322Df3CE2B2852558993918A122B
 
       # Node Environment
       - key: NODE_ENV
