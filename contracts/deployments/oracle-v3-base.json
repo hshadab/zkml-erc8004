@@ -1,0 +1,11 @@
+{
+  "network": "Base Mainnet",
+  "contract": "NewsClassificationOracleVerified V3",
+  "address": "0xe92c7aE9E894a8701583a43363676ff878d5b6ed",
+  "identityRegistry": "0x909fbFbFE9F7Bdb4d1a6e02F2E91d3f367555b07",
+  "newsVerifier": "0x0590f2DFa80BCCc948aDb992737305f2FD01ceba",
+  "validationRegistry": "0x04C6276830DA145ee465194131B7beC22aa2d0d3",
+  "deployer": "0x4E3eD682f723DD133252aae032D32f1Ef7EEafb4",
+  "timestamp": "2025-10-21T14:30:51.777Z",
+  "transactionHash": "0xf0f268928a88e43280e95c18ac68ae236f2bda087a24a61141aef44fc1efda09"
+}

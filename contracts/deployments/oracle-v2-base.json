@@ -1,0 +1,9 @@
+{
+  "network": "Base Mainnet",
+  "contract": "NewsClassificationOracle V2",
+  "address": "0xB3729A213b31F4d68f9F97b5557743aCc8802762",
+  "identityRegistry": "0x98879bE272B30844D3d3BBcDD849827b524F43B5",
+  "deployer": "0x4E3eD682f723DD133252aae032D32f1Ef7EEafb4",
+  "timestamp": "2025-10-21T11:43:20.840Z",
+  "transactionHash": "0x0ffa92912394f5f2682116924b2f8a620d6bf8bdda70dbb7211934be1b032653"
+}

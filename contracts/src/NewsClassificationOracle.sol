@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import "./interfaces/INewsOracle.sol";
 import "./interfaces/IERC8004.sol";
+import "./interfaces/IValidationRegistry.sol";
 
 /**
  * @title NewsClassificationOracle
@@ -12,6 +13,7 @@ import "./interfaces/IERC8004.sol";
 contract NewsClassificationOracle is INewsOracle {
     // State variables
     IERC8004 public immutable verificationRegistry;
+    IValidationRegistry public validationRegistry;
     uint256 public oracleTokenId;
     address public owner;
 
@@ -49,6 +51,15 @@ contract NewsClassificationOracle is INewsOracle {
             "Token not authorized for news_classification"
         );
         oracleTokenId = tokenId;
+    }
+
+    /**
+     * @notice Set the validation registry address (ERC-8004 validation tracking)
+     * @param _validationRegistry Address of the ValidationRegistry contract
+     */
+    function setValidationRegistry(address _validationRegistry) external onlyOwner {
+        require(_validationRegistry != address(0), "Invalid validation registry");
+        validationRegistry = IValidationRegistry(_validationRegistry);
     }
 
     /**
@@ -99,6 +110,16 @@ contract NewsClassificationOracle is INewsOracle {
 
         // Submit proof to registry
         verificationRegistry.submitProof(oracleTokenId, proofHash);
+
+        // Request validation from ValidationRegistry (ERC-8004)
+        if (address(validationRegistry) != address(0)) {
+            bytes32 workHash = keccak256(abi.encodePacked(classificationId, proofHash));
+            try validationRegistry.requestValidation(classificationId, workHash, oracleTokenId) {
+                // Validation request succeeded
+            } catch {
+                // Validation registry call failed, continue without it
+            }
+        }
 
         emit NewsClassified(
             classificationId,

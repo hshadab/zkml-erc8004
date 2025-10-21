@@ -29,14 +29,16 @@ The system runs continuously:
 
 | Contract | Address | Purpose |
 |----------|---------|---------|
-| **Groth16Verifier** | `0x80DA3C348D132172A21868cb318874b20FE1F177` | Verifies zkSNARK proofs |
-| **NewsVerifier** | `0x42706c5d80CC618e51d178bd9869894692A77a5c` | News classification verifier |
-| **ZkMLVerificationRegistry** | `0xb274D9bdbEFD5e645a1E6Df94F4ff62838625230` | ERC-8004 registry |
-| **NewsClassificationOracle** | `0x93Efb961780a19052A2fBd186A86b7edf073EFb6` | Stores classifications |
-| **TradingAgentBase** | `0xBC2a8f872f02CCd2356F235675f756A4FdCAd81d` | Autonomous trading agent |
+| **Groth16Verifier** | `0xebE04Fa57C6cb7294DD7B3D16c166c3424092168` | Verifies zkSNARK proofs |
+| **NewsVerifier** | `0x0590f2DFa80BCCc948aDb992737305f2FD01ceba` | News classification verifier |
+| **ZkMLVerificationRegistry** | `0x909fbFbFE9F7Bdb4d1a6e02F2E91d3f367555b07` | ERC-8004 verification registry |
+| **ValidationRegistry** | `0x04C6276830DA145ee465194131B7beC22aa2d0d3` | ERC-8004 validation registry |
+| **NewsClassificationOracle** | `0xe92c7aE9E894a8701583a43363676ff878d5b6ed` | Stores classifications |
+| **TradingAgent** | `0x0D43DC16eFC1322Df3CE2B2852558993918A122B` | Autonomous trading agent |
 
 **Network**: Base Mainnet
 **Chain ID**: 8453
+**RPC**: Alchemy (free tier: 300M CU/month)
 **Explorer**: https://basescan.org
 
 ## How It Works - Step by Step

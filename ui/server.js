@@ -20,6 +20,7 @@ app.use((req, res, next) => {
 
 // Contract addresses (Base Mainnet deployment)
 const REGISTRY_ADDRESS = process.env.ZKML_VERIFICATION_REGISTRY || '0xb274D9bdbEFD5e645a1E6Df94F4ff62838625230';
+const VALIDATION_REGISTRY_ADDRESS = process.env.VALIDATION_REGISTRY || '0x44fBb986C8705A1de9951131a48D8eBc142c08E6';
 const ORACLE_ADDRESS = process.env.NEWS_ORACLE_ADDRESS || '0x93Efb961780a19052A2fBd186A86b7edf073EFb6';
 const AGENT_ADDRESS = process.env.TRADING_AGENT_ADDRESS || '0xBC2a8f872f02CCd2356F235675f756A4FdCAd81d';
 const VERIFIER_ADDRESS = process.env.NEWS_VERIFIER_ADDRESS || '0x42706c5d80CC618e51d178bd9869894692A77a5c';
@@ -314,6 +315,7 @@ app.get('/api/trades', async (req, res) => {
             }
 
             // For each trade, try to find its TradeExecuted event to get the transaction hash
+            // Note: getRecentTrades returns oldest first, so reverse to show most recent first
             const trades = await Promise.all(
                 [...recentTrades].reverse().map(async (trade) => {
                     let txHash = '0x';
@@ -440,6 +442,7 @@ app.get('/api/registry', async (req, res) => {
 app.get('/api/addresses', (req, res) => {
     res.json({
         registry: REGISTRY_ADDRESS,
+        validationRegistry: VALIDATION_REGISTRY_ADDRESS,
         oracle: ORACLE_ADDRESS,
         agent: AGENT_ADDRESS,
         verifier: VERIFIER_ADDRESS,
@@ -498,6 +501,78 @@ app.get('/api/latest-classification', async (req, res) => {
     } catch (error) {
         console.error('Error fetching latest classification:', error);
         res.status(500).json({ error: error.message });
+    }
+});
+
+// Get validation history from ValidationRegistry (ERC-8004)
+app.get('/api/validations', async (req, res) => {
+    try {
+        const result = await retryWithBackoff(async () => {
+            const VALIDATION_REGISTRY_ABI = [
+                'function validationRequests(bytes32) view returns (uint256 agentTokenId, bytes32 workId, bytes32 workHash, uint256 requestTime, uint8 status, uint256 responseCount)',
+                'function validationResponses(bytes32, uint256) view returns (uint256 validatorTokenId, bool approved, bytes32 proofHash, uint256 responseTime)'
+            ];
+
+            const validationRegistry = new ethers.Contract(
+                VALIDATION_REGISTRY_ADDRESS,
+                VALIDATION_REGISTRY_ABI,
+                provider
+            );
+
+            // Get recent classifications to check their validation status
+            const count = await oracleContract.getClassificationCount();
+            const totalClassifications = Number(count);
+            const recentCount = Math.min(10, totalClassifications);
+
+            const validations = [];
+
+            for (let i = 0; i < recentCount; i++) {
+                try {
+                    const classificationId = await oracleContract.getClassificationIdByIndex(totalClassifications - 1 - i);
+
+                    // Query validation request
+                    const validationRequest = await validationRegistry.validationRequests(classificationId);
+
+                    if (Number(validationRequest.requestTime) > 0) {
+                        const validation = {
+                            classificationId: classificationId,
+                            agentTokenId: validationRequest.agentTokenId.toString(),
+                            workHash: validationRequest.workHash,
+                            requestTime: Number(validationRequest.requestTime),
+                            status: Number(validationRequest.status),
+                            responseCount: Number(validationRequest.responseCount),
+                            responses: []
+                        };
+
+                        // Get responses
+                        for (let j = 0; j < Number(validationRequest.responseCount); j++) {
+                            try {
+                                const response = await validationRegistry.validationResponses(classificationId, j);
+                                validation.responses.push({
+                                    validatorTokenId: response.validatorTokenId.toString(),
+                                    approved: response.approved,
+                                    proofHash: response.proofHash,
+                                    responseTime: Number(response.responseTime)
+                                });
+                            } catch (err) {
+                                console.error(`Error fetching response ${j}:`, err);
+                            }
+                        }
+
+                        validations.push(validation);
+                    }
+                } catch (err) {
+                    console.error(`Error fetching validation for classification ${i}:`, err);
+                }
+            }
+
+            return { validations };
+        });
+
+        res.json(result);
+    } catch (error) {
+        console.error('Error fetching validations:', error);
+        res.status(500).json({ error: error.message, validations: [] });
     }
 });
 

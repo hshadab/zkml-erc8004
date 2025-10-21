@@ -1,0 +1,16 @@
+{
+  "network": "Base Mainnet",
+  "contract": "TradingAgentBaseV2",
+  "address": "0x0D43DC16eFC1322Df3CE2B2852558993918A122B",
+  "deployer": "0x4E3eD682f723DD133252aae032D32f1Ef7EEafb4",
+  "timestamp": "2025-10-21T14:56:24.341Z",
+  "config": {
+    "newsOracle": "0xe92c7aE9E894a8701583a43363676ff878d5b6ed",
+    "verificationRegistry": "0x909fbFbFE9F7Bdb4d1a6e02F2E91d3f367555b07",
+    "swapRouter": "0x327Df1E6de05895d2ab08513aaDD9313Fe505d86",
+    "routerType": "BaseSwap (Uniswap V2)",
+    "weth": "0x4200000000000000000000000000000000000006",
+    "usdc": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+  },
+  "transactionHash": "0x84d76342ce89543e00942cddf60c7e859cacef479bebacae2a45ea0f3feea696"
+}

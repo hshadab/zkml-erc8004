@@ -574,6 +574,71 @@
             background: var(--accent-blue);
         }
 
+        /* Info Tooltip */
+        .info-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--bg-tertiary);
+            color: var(--accent-blue);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: help;
+            margin-left: 8px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .info-icon:hover {
+            background: var(--accent-blue);
+            color: white;
+            border-color: var(--accent-blue);
+            transform: scale(1.1);
+        }
+
+        .tooltip {
+            position: absolute;
+            bottom: calc(100% + 12px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-tertiary);
+            border: 1px solid var(--accent-blue);
+            border-radius: 8px;
+            padding: 12px 16px;
+            min-width: 280px;
+            max-width: 400px;
+            font-size: 13px;
+            font-weight: 400;
+            line-height: 1.5;
+            color: var(--text-primary);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s, visibility 0.2s;
+            pointer-events: none;
+            white-space: normal;
+        }
+
+        .tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: var(--accent-blue);
+        }
+
+        .info-icon:hover .tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
+
         /* Proof Hash */
         .proof-hash {
             font-family: 'Courier New', monospace;
@@ -719,54 +784,17 @@
             </div>
         </section>
 
-        <!-- Latest Classification Highlight -->
-        <div class="dashboard-card" id="latest-classification-card" style="margin-bottom: 32px; display: none;">
-            <div class="card-header">
-                <h2 class="card-title">🎯 Latest zkML Classification</h2>
-                <span class="card-badge oracle">LIVE</span>
-            </div>
-            <div id="latest-classification-content">
-                <div class="empty-state">
-                    <div class="empty-state-icon">⌛</div>
-                    <p>Loading latest classification...</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Stats Grid -->
-        <div class="stats-grid" id="stats-grid">
-            <div class="stat-card">
-                <div class="stat-label">Total Classifications</div>
-                <div class="stat-value" id="total-classifications">-</div>
-                <div class="stat-subtitle">All-time on Base</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">🔐 Oracle Reputation</div>
-                <div class="stat-value" id="oracle-reputation">-</div>
-                <div class="stat-subtitle">ERC-8004 Trust Score</div>
-                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary);">
-                    <span id="oracle-proofs">- proofs</span>
-                    <span id="oracle-accuracy">-% accurate</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Total Trades</div>
-                <div class="stat-value" id="total-trades">-</div>
-                <div class="stat-subtitle">Autonomous executions</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Win Rate</div>
-                <div class="stat-value good" id="win-rate">-</div>
-                <div class="stat-subtitle">10-second profitability</div>
-            </div>
-        </div>
-
         <!-- Dashboard Grid -->
         <div class="dashboard-grid">
             <!-- Oracle Dashboard -->
             <div class="dashboard-card">
                 <div class="card-header">
-                    <h2 class="card-title">📰 News Classifications</h2>
+                    <h2 class="card-title">
+                        📰 News Classifications
+                        <span class="info-icon">ⓘ
+                            <span class="tooltip">These are crypto news articles analyzed by our AI model. Each article is classified as Good News, Bad News, or Neutral using a real neural network. The AI's decision is cryptographically proven with zero-knowledge proofs and verified on the blockchain.</span>
+                        </span>
+                    </h2>
                     <span class="card-badge oracle">ORACLE</span>
                 </div>
                 <div class="classification-list" id="classification-list">
@@ -780,7 +808,12 @@
             <!-- Trading Agent Dashboard -->
             <div class="dashboard-card">
                 <div class="card-header">
-                    <h2 class="card-title">💼 Agent Trades</h2>
+                    <h2 class="card-title">
+                        💼 Agent Trades
+                        <span class="info-icon">ⓘ
+                            <span class="tooltip">This autonomous trading agent reads news classifications from the blockchain and automatically executes cryptocurrency trades. When it sees Good News, it buys ETH. When it sees Bad News, it sells ETH. All trades happen on-chain using real funds.</span>
+                        </span>
+                    </h2>
                     <span class="card-badge agent">AGENT</span>
                 </div>
                 <div class="trade-list" id="trade-list">
@@ -797,7 +830,12 @@
             <!-- Portfolio -->
             <div class="dashboard-card">
                 <div class="card-header">
-                    <h2 class="card-title">💰 Agent Portfolio</h2>
+                    <h2 class="card-title">
+                        💰 Agent Portfolio
+                        <span class="info-icon">ⓘ
+                            <span class="tooltip">This shows the trading agent's current cryptocurrency holdings. The agent holds ETH (Ethereum) and USDC (US Dollar Coin) in its wallet. These are real tokens on Base blockchain that the agent trades automatically based on news sentiment.</span>
+                        </span>
+                    </h2>
                     <span class="card-badge agent">LIVE</span>
                 </div>
                 <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-tertiary); border-radius: 8px; border: 1px solid var(--border-color);">
@@ -829,44 +867,119 @@
             <!-- ERC-8004 Registry -->
             <div class="dashboard-card">
                 <div class="card-header">
-                    <h2 class="card-title">🏛️ ERC-8004 Registry</h2>
+                    <h2 class="card-title">
+                        🏛️ ERC-8004 Registry
+                        <span class="info-icon">ⓘ
+                            <span class="tooltip">ERC-8004 is a blockchain standard for AI agent identities and work validation. This registry tracks which AI agents are registered on the network, monitors their reputation scores, and coordinates validation requests between agents. Think of it as a trust system for AI work.</span>
+                        </span>
+                    </h2>
                     <span class="card-badge registry">REGISTRY</span>
                 </div>
-                <table class="registry-table">
-                    <thead>
-                        <tr>
-                            <th>Token ID</th>
-                            <th>Capability</th>
-                            <th>Reputation</th>
-                        </tr>
-                    </thead>
-                    <tbody id="registry-tbody">
-                        <tr>
-                            <td colspan="3">
-                                <div class="empty-state">
-                                    <div class="empty-state-icon">🔐</div>
-                                    <p>Loading registry...</p>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-tertiary); border-radius: 8px; border: 1px solid var(--border-color);">
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">🏛️ ValidationRegistry Contract Address</div>
+                    <a href="https://basescan.org/address/0x44fBb986C8705A1de9951131a48D8eBc142c08E6" target="_blank" style="text-decoration: none;">
+                        <div class="proof-hash" id="validation-registry-address" style="color: var(--accent-blue); cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--accent-teal)'" onmouseout="this.style.color='var(--accent-blue)'">0x44fBb986C8705A1de9951131a48D8eBc142c08E6</div>
+                    </a>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary);">
+                        Registered Agents
+                        <span class="info-icon">ⓘ
+                            <span class="tooltip">Each AI agent on the network gets a unique NFT (token) as its identity. Agents earn reputation points (0-1000) by completing accurate work. Higher reputation means more trustworthy AI. Our news classifier Oracle has Token ID #1.</span>
+                        </span>
+                    </h3>
+                    <table class="registry-table">
+                        <thead>
+                            <tr>
+                                <th>Token ID</th>
+                                <th>Capability</th>
+                                <th>Reputation</th>
+                            </tr>
+                        </thead>
+                        <tbody id="registry-tbody">
+                            <tr>
+                                <td colspan="3">
+                                    <div class="empty-state">
+                                        <div class="empty-state-icon">🔐</div>
+                                        <p>Loading registry...</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary);">
+                        Recent Validation Requests
+                        <span class="info-icon">ⓘ
+                            <span class="tooltip">When our Oracle AI classifies news, it creates a validation request asking other AI agents to verify the work. This table shows pending, approved, or rejected validations. Other agents can validate the Oracle's work to build trust in the network.</span>
+                        </span>
+                    </h3>
+                    <table class="registry-table">
+                        <thead>
+                            <tr>
+                                <th>Classification ID</th>
+                                <th>Agent Token</th>
+                                <th>Status</th>
+                                <th>Responses</th>
+                                <th>Request Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="validations-tbody">
+                            <tr>
+                                <td colspan="5">
+                                    <div class="empty-state">
+                                        <div class="empty-state-icon">⏳</div>
+                                        <p>Loading validation history...</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid" id="stats-grid" style="margin-bottom: 32px;">
+            <div class="stat-card">
+                <div class="stat-label">🔐 Oracle Reputation</div>
+                <div class="stat-value" id="oracle-reputation">-</div>
+                <div class="stat-subtitle">ERC-8004 Trust Score</div>
+                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary);">
+                    <span id="oracle-proofs">- proofs</span>
+                    <span id="oracle-accuracy">-% accurate</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Trades</div>
+                <div class="stat-value" id="total-trades">-</div>
+                <div class="stat-subtitle">Autonomous executions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Win Rate</div>
+                <div class="stat-value good" id="win-rate">-</div>
+                <div class="stat-subtitle">10-second profitability</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Classifications</div>
+                <div class="stat-value" id="total-classifications">-</div>
+                <div class="stat-subtitle">All-time on Base</div>
             </div>
         </div>
 
         <!-- Contract Addresses -->
         <div class="dashboard-card">
             <div class="card-header">
-                <h2 class="card-title">📋 Contract Addresses</h2>
+                <h2 class="card-title">
+                    📋 Contract Addresses
+                    <span class="info-icon">ⓘ
+                        <span class="tooltip">These are the blockchain addresses of all smart contracts powering this system. Each address is on Base Mainnet. Click any address to view it on BaseScan, the blockchain explorer. All code is transparent and verifiable on-chain.</span>
+                    </span>
+                </h2>
                 <span class="card-badge registry">BASE</span>
             </div>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
-                <div class="portfolio-item">
-                    <div class="portfolio-label">🏛️ Registry</div>
-                    <a href="https://basescan.org/address/0xb274D9bdbEFD5e645a1E6Df94F4ff62838625230" target="_blank" style="text-decoration: none;">
-                        <div class="proof-hash" id="registry-address" style="color: var(--accent-blue); cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--accent-teal)'" onmouseout="this.style.color='var(--accent-blue)'">0xb274D9bdbEFD5e645a1E6Df94F4ff62838625230</div>
-                    </a>
-                </div>
                 <div class="portfolio-item">
                     <div class="portfolio-label">📰 News Oracle</div>
                     <a href="https://basescan.org/address/0x93Efb961780a19052A2fBd186A86b7edf073EFb6" target="_blank" style="text-decoration: none;">
@@ -914,11 +1027,11 @@
             try {
                 await Promise.all([
                     loadStats(),
-                    loadLatestClassification(),
                     loadClassifications(),
                     loadTrades(),
                     loadPortfolio(),
-                    loadRegistry()
+                    loadRegistry(),
+                    loadValidations()
                 ]);
             } catch (error) {
                 console.error('Error loading dashboard:', error);
@@ -1056,10 +1169,12 @@
                     <div class="classification-item">
                         <div class="classification-header">
                             <div class="classification-headline">${c.headline}${zkmlBadge}</div>
-                            <span class="sentiment-badge ${c.sentiment.toLowerCase()}">${c.sentiment}</span>
+                            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                                <span class="sentiment-badge ${c.sentiment.toLowerCase()}">${c.sentiment}</span>
+                                <span style="font-size: 11px; color: var(--text-secondary); font-weight: 600;">${c.confidence}% confidence</span>
+                            </div>
                         </div>
                         <div class="classification-meta">
-                            <span>📊 Confidence: ${c.confidence}%</span>
                             <span>🔐 Proof: ${c.proofHash.slice(0, 10)}...</span>
                             <span>⏰ ${new Date(c.timestamp * 1000).toLocaleString()}</span>
                         </div>
@@ -1169,7 +1284,7 @@
                 tbody.innerHTML = data.agents.map(a => `
                     <tr>
                         <td>
-                            <a href="https://basescan.org/token/0x078C7aFbFADAC9BE82F372e867231d605A8d3428?a=${a.tokenId}" target="_blank" style="color: var(--accent-blue); text-decoration: none; font-weight: 600;" onmouseover="this.style.color='var(--accent-teal)'" onmouseout="this.style.color='var(--accent-blue)'">
+                            <a href="https://basescan.org/token/0x98879bE272B30844D3d3BBcDD849827b524F43B5?a=${a.tokenId}" target="_blank" style="color: var(--accent-blue); text-decoration: none; font-weight: 600;" onmouseover="this.style.color='var(--accent-teal)'" onmouseout="this.style.color='var(--accent-blue)'">
                                 #${a.tokenId}
                             </a>
                         </td>
@@ -1187,6 +1302,63 @@
             } catch (error) {
                 console.error('Error loading registry:', error);
             }
+        }
+
+        // Load validations
+        async function loadValidations() {
+            try {
+                const response = await fetch(`${API_URL}/api/validations`);
+                const data = await response.json();
+
+                const tbody = document.getElementById('validations-tbody');
+
+                if (!data.validations || data.validations.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="empty-state-icon">📭</div><p>No validation requests yet</p></div></td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.validations.map(v => {
+                    const statusLabels = ['Pending', 'Validated', 'Rejected'];
+                    const statusColors = ['var(--accent-yellow)', 'var(--accent-green)', 'var(--accent-red)'];
+                    const statusIcons = ['⏳', '✅', '❌'];
+
+                    const status = statusLabels[v.status] || 'Unknown';
+                    const color = statusColors[v.status] || 'var(--text-secondary)';
+                    const icon = statusIcons[v.status] || '❓';
+
+                    const shortId = v.classificationId.substring(0, 10) + '...' + v.classificationId.substring(v.classificationId.length - 8);
+                    const timeAgo = formatTimeAgo(v.requestTime);
+
+                    return `
+                    <tr>
+                        <td>
+                            <div style="font-family: monospace; font-size: 12px;">${shortId}</div>
+                        </td>
+                        <td>#${v.agentTokenId}</td>
+                        <td>
+                            <span style="color: ${color};">${icon} ${status}</span>
+                        </td>
+                        <td>${v.responseCount}</td>
+                        <td>${timeAgo}</td>
+                    </tr>
+                `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading validations:', error);
+                const tbody = document.getElementById('validations-tbody');
+                tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="empty-state-icon">⚠️</div><p>Error loading validations</p></div></td></tr>';
+            }
+        }
+
+        // Helper function to format time ago
+        function formatTimeAgo(timestamp) {
+            const now = Math.floor(Date.now() / 1000);
+            const seconds = now - timestamp;
+
+            if (seconds < 60) return `${seconds}s ago`;
+            if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+            if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+            return `${Math.floor(seconds / 86400)}d ago`;
         }
 
         // Start auto-refresh

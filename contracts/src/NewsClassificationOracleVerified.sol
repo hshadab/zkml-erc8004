@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import "./interfaces/INewsOracle.sol";
 import "./interfaces/IERC8004.sol";
+import "./interfaces/IValidationRegistry.sol";
 import "./NewsVerifier.sol";
 
 /**
@@ -14,6 +15,7 @@ contract NewsClassificationOracleVerified is INewsOracle {
     // Interfaces
     IERC8004 public immutable verificationRegistry;
     NewsVerifier public immutable newsVerifier;
+    IValidationRegistry public validationRegistry;
 
     // State
     uint256 public oracleTokenId;
@@ -38,9 +40,14 @@ contract NewsClassificationOracleVerified is INewsOracle {
         _;
     }
 
-    constructor(address _verificationRegistry, address _newsVerifier) {
+    constructor(
+        address _verificationRegistry,
+        address _newsVerifier,
+        address _validationRegistry
+    ) {
         verificationRegistry = IERC8004(_verificationRegistry);
         newsVerifier = NewsVerifier(_newsVerifier);
+        validationRegistry = IValidationRegistry(_validationRegistry);
         owner = msg.sender;
     }
 
@@ -53,6 +60,14 @@ contract NewsClassificationOracleVerified is INewsOracle {
             "Token not authorized for news_classification"
         );
         oracleTokenId = tokenId;
+    }
+
+    /**
+     * @notice Set the ValidationRegistry address
+     */
+    function setValidationRegistry(address _validationRegistry) external onlyOwner {
+        require(_validationRegistry != address(0), "Invalid address");
+        validationRegistry = IValidationRegistry(_validationRegistry);
     }
 
     /**
@@ -126,6 +141,12 @@ contract NewsClassificationOracleVerified is INewsOracle {
         // Submit proof to registry
         verificationRegistry.submitProof(oracleTokenId, proofHash);
 
+        // Request validation (ERC-8004 integration)
+        if (address(validationRegistry) != address(0)) {
+            bytes32 workHash = keccak256(abi.encodePacked(headline, sentiment, confidence));
+            validationRegistry.requestValidation(classificationId, workHash, oracleTokenId);
+        }
+
         emit NewsClassified(
             classificationId,
             headline,
@@ -180,6 +201,12 @@ contract NewsClassificationOracleVerified is INewsOracle {
 
         _classificationIds.push(classificationId);
         verificationRegistry.submitProof(oracleTokenId, proofHash);
+
+        // Request validation (ERC-8004 integration)
+        if (address(validationRegistry) != address(0)) {
+            bytes32 workHash = keccak256(abi.encodePacked(headline, sentiment, confidence));
+            validationRegistry.requestValidation(classificationId, workHash, oracleTokenId);
+        }
 
         emit NewsClassified(
             classificationId,

@@ -425,4 +425,18 @@ contract ZkMLVerificationRegistry is IERC8004 {
         Agent storage agent = _agents[tokenId];
         return (agent.owner, agent.capabilityTypes);
     }
+
+    /**
+     * @notice Get the owner of an agent token (ERC-721 compatible)
+     * @param tokenId The token ID to query
+     * @return The address owning the token
+     */
+    function ownerOf(uint256 tokenId)
+        external
+        view
+        agentExists(tokenId)
+        returns (address)
+    {
+        return _agents[tokenId].owner;
+    }
 }

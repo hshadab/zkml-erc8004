@@ -1,0 +1,11 @@
+{
+  "network": "Base Mainnet",
+  "contract": "ValidationRegistry",
+  "address": "0x44fBb986C8705A1de9951131a48D8eBc142c08E6",
+  "deployer": "0x4E3eD682f723DD133252aae032D32f1Ef7EEafb4",
+  "timestamp": "2025-10-21T00:00:00.000Z",
+  "config": {
+    "identityRegistry": "0x98879bE272B30844D3d3BBcDD849827b524F43B5"
+  },
+  "transactionHash": "0xcac3b052e282273669b3bb84d79aaa79cbb48e1daa7808f13f9af1530fe1754f"
+}

@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "./Groth16Verifier.sol";
+import "./interfaces/IValidationRegistry.sol";
 
 /**
  * @title NewsVerifier
@@ -17,6 +18,11 @@ contract NewsVerifier is Groth16Verifier {
         address verifier;
         bytes32 proofHash;
     }
+
+    // ERC-8004 Validation Registry integration
+    IValidationRegistry public validationRegistry;
+    uint256 public validatorTokenId;
+    address public owner;
 
     // Mapping from classification ID to verified data
     mapping(bytes32 => VerifiedClassification) public verifiedClassifications;
@@ -39,6 +45,34 @@ contract NewsVerifier is Groth16Verifier {
         address indexed verifier,
         string reason
     );
+
+    // Modifier
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only owner");
+        _;
+    }
+
+    constructor() {
+        owner = msg.sender;
+    }
+
+    /**
+     * @notice Set the validation registry address (ERC-8004)
+     * @param _validationRegistry Address of the ValidationRegistry contract
+     */
+    function setValidationRegistry(address _validationRegistry) external onlyOwner {
+        require(_validationRegistry != address(0), "Invalid validation registry");
+        validationRegistry = IValidationRegistry(_validationRegistry);
+    }
+
+    /**
+     * @notice Set the validator token ID from Identity Registry
+     * @param _validatorTokenId The ERC-8004 token ID for this validator
+     */
+    function setValidatorTokenId(uint256 _validatorTokenId) external onlyOwner {
+        require(_validatorTokenId > 0, "Invalid token ID");
+        validatorTokenId = _validatorTokenId;
+    }
 
     /**
      * @notice Verify and store a news classification proof
@@ -93,6 +127,20 @@ contract NewsVerifier is Groth16Verifier {
             msg.sender,
             block.timestamp
         );
+
+        // Submit validation to ValidationRegistry (ERC-8004)
+        if (address(validationRegistry) != address(0) && validatorTokenId > 0) {
+            try validationRegistry.submitValidation(
+                classificationId,
+                true,  // approved - proof was valid
+                proofHash,
+                validatorTokenId
+            ) {
+                // Validation submitted successfully
+            } catch {
+                // Validation registry call failed, continue without it
+            }
+        }
 
         return true;
     }

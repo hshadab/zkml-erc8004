@@ -22,4 +22,18 @@ interface IZkMLVerificationRegistry is IERC8004 {
      * @param amount Amount to decrease
      */
     function decreaseReputation(uint256 tokenId, uint256 amount) external;
+
+    /**
+     * @notice Get the owner of a token (from ERC721)
+     * @param tokenId The token ID to query
+     * @return The address owning the token
+     */
+    function ownerOf(uint256 tokenId) external view returns (address);
+
+    /**
+     * @notice Check if a contract is authorized to act on behalf of agents
+     * @param contractAddress The contract address to check
+     * @return True if authorized, false otherwise
+     */
+    function authorizedContracts(address contractAddress) external view returns (bool);
 }
