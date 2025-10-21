@@ -184,6 +184,233 @@ Trade[] memory recentTrades = agent.getRecentTrades(10);
 
 ---
 
+### 4. X402 Paid Classification Service
+
+**What it does**: HTTP 402 payment-required API for zkML news classification using USDC on Base Mainnet
+
+**Implementation**:
+- `news-service/src/x402Service.js` - Payment verification service
+- `news-service/src/index.js` - API endpoints
+- `ui/public/index.html` - Compact widget + payment modal
+
+**Inspired by**: [X402 Protocol](https://x402.org/) - Using HTTP 402 status code for crypto payments
+
+**Process**:
+```
+1. User requests classification via POST /api/classify
+   → If no payment: Returns HTTP 402 with payment instructions
+
+2. User sends $0.25 USDC to service recipient address on Base
+   → USDC Address: 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
+   → Network: Base Mainnet (Chain ID: 8453)
+
+3. User submits classification request with payment txHash
+   → Service verifies USDC Transfer event on-chain
+   → Validates amount ≥ $0.25, recipient correct, within 24 hours
+
+4. If payment valid:
+   → Generate JOLT-Atlas zkML proof
+   → Run news classification
+   → Return sentiment + confidence + proofHash
+
+5. User receives cryptographically verified result instantly
+```
+
+**Payment Verification Details**:
+```javascript
+// Verifies on Base Mainnet:
+// 1. Transaction confirmed (receipt exists)
+// 2. Transaction succeeded (status = 1)
+// 3. Contains USDC Transfer event to recipient
+// 4. Transfer amount >= $0.25 (250000 with 6 decimals)
+// 5. Payment timestamp within last 24 hours
+
+// Example USDC Transfer event parsing:
+const usdcInterface = new ethers.Interface([
+  'event Transfer(address indexed from, address indexed to, uint256 value)'
+]);
+
+for (const log of receipt.logs) {
+  if (log.address === USDC_ADDRESS) {
+    const parsed = usdcInterface.parseLog(log);
+    if (parsed.args.to === recipientAddress &&
+        parsed.args.value >= minimumPayment) {
+      // Payment verified ✓
+    }
+  }
+}
+```
+
+**API Endpoints**:
+```bash
+# Get pricing information
+GET /api/pricing
+
+Response:
+{
+  "service": "zkML News Classification",
+  "price": "$0.25",
+  "currency": "USDC",
+  "usdcAddress": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+  "recipient": "0xYourOracleAddress",
+  "network": "Base Mainnet (Chain ID: 8453)",
+  "features": [
+    "JOLT-Atlas zkML inference",
+    "Groth16 proof generation",
+    "On-chain verifiable results",
+    "Instant delivery"
+  ]
+}
+
+# Request classification without payment
+POST /api/classify
+{
+  "headline": "Bitcoin ETF approved"
+}
+
+Response (HTTP 402):
+{
+  "status": 402,
+  "message": "Payment Required",
+  "payment": { ...pricing info... }
+}
+
+# Request classification WITH payment
+POST /api/classify
+{
+  "headline": "Bitcoin ETF approved",
+  "paymentTx": "0xabc123...def456"
+}
+
+Response (HTTP 200):
+{
+  "success": true,
+  "service": "zkML News Classification (X402)",
+  "payment": {
+    "verified": true,
+    "txHash": "0xabc123...def456",
+    "from": "0xUserAddress",
+    "amount": "0.25"
+  },
+  "classification": {
+    "headline": "Bitcoin ETF approved",
+    "sentiment": "GOOD_NEWS",
+    "confidence": 87,
+    "proofHash": "0x7890abcd..."
+  },
+  "timestamp": "2025-10-21T12:34:56.789Z"
+}
+```
+
+**Payment Verification Errors**:
+```javascript
+// TX_NOT_FOUND - Transaction not confirmed yet
+{
+  "valid": false,
+  "error": "Transaction not found or not confirmed yet",
+  "code": "TX_NOT_FOUND"
+}
+
+// INVALID_RECIPIENT - USDC sent to wrong address
+{
+  "valid": false,
+  "error": "No USDC transfer to 0xRecipient found in transaction",
+  "code": "INVALID_RECIPIENT"
+}
+
+// INSUFFICIENT_PAYMENT - Amount too low
+{
+  "valid": false,
+  "error": "Insufficient payment. Minimum: $0.25 USDC, received: $0.10 USDC",
+  "code": "INSUFFICIENT_PAYMENT"
+}
+
+// PAYMENT_EXPIRED - Transaction older than 24 hours
+{
+  "valid": false,
+  "error": "Payment too old (must be within 24 hours)",
+  "code": "PAYMENT_EXPIRED"
+}
+```
+
+**UI Integration**:
+```
+Compact Widget (Top-Right Header):
+┌──────────────────────┐
+│ 💳 X402 Service $0.25│
+└──────────────────────┘
+         │
+         │ (click)
+         ▼
+┌────────────────────────────────────┐
+│   💳 X402 Paid Classification      │
+│                                    │
+│   Price: $0.25 USDC                │
+│   Recipient: 0x1234...             │
+│                                    │
+│   [Input: Payment TX Hash]         │
+│   [Input: News Headline]           │
+│                                    │
+│   [Request Classification]         │
+│                                    │
+│   ✅ Payment Verified              │
+│   Sentiment: GOOD_NEWS             │
+│   Confidence: 87%                  │
+│   Proof: 0x7890...                 │
+└────────────────────────────────────┘
+```
+
+**Security Features**:
+- ✅ On-chain payment verification (no off-chain tracking)
+- ✅ Amount validation (prevents underpayment)
+- ✅ Recipient validation (prevents misdirected payments)
+- ✅ Time window check (24h expiry prevents replay attacks)
+- ✅ Network validation (Base Mainnet only)
+- ✅ ERC-20 event parsing (verifies actual token transfers)
+
+**Gas Costs** (Base Mainnet):
+- USDC Transfer: ~50k gas (~$0.02 @ 5 gwei)
+- Total User Cost: $0.25 + gas ≈ $0.27
+- Service receives: $0.25 USDC
+- No additional blockchain transactions required after payment
+
+**Use Cases**:
+1. **News Aggregators**: Pay-per-classification for sentiment analysis
+2. **Trading Bots**: Real-time news sentiment with cryptographic proofs
+3. **Research**: Collect verified sentiment data for datasets
+4. **DeFi Protocols**: Feed on-chain sentiment oracles with verified data
+
+**Integration Example**:
+```javascript
+// 1. Get pricing
+const pricing = await fetch('http://localhost:3000/api/pricing')
+  .then(r => r.json());
+
+// 2. Send USDC payment on Base
+const usdc = new ethers.Contract(pricing.usdcAddress, ERC20_ABI, signer);
+const tx = await usdc.transfer(
+  pricing.recipient,
+  ethers.parseUnits('0.25', 6)  // USDC has 6 decimals
+);
+await tx.wait();
+
+// 3. Request classification with payment proof
+const result = await fetch('http://localhost:3000/api/classify', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    headline: 'Bitcoin ETF approved',
+    paymentTx: tx.hash
+  })
+}).then(r => r.json());
+
+// 4. Use verified result
+console.log(result.classification.sentiment);  // "GOOD_NEWS"
+console.log(result.classification.proofHash);  // Groth16 proof hash
+```
+
+---
+
 ## 🔗 Integration Points
 
 ### How Everything Connects:

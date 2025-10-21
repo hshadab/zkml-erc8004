@@ -736,9 +736,26 @@
                 <div class="logo">zkML News Oracle</div>
                 <span class="badge">ERC-8004 Demo</span>
             </div>
-            <div class="status-indicator">
-                <div class="status-dot"></div>
-                <span id="status-text">Live on Base Mainnet</span>
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div class="status-indicator">
+                    <div class="status-dot"></div>
+                    <span id="status-text">Live on Base Mainnet</span>
+                </div>
+                <!-- API Docs Widget -->
+                <div style="background: var(--bg-tertiary); border: 1px solid var(--accent-blue); border-radius: 8px; padding: 8px 12px; cursor: pointer; transition: all 0.2s;" onclick="document.getElementById('api-docs-modal').style.display = 'flex'" onmouseover="this.style.borderColor='var(--accent-teal)'" onmouseout="this.style.borderColor='var(--accent-blue)'">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 14px;">📖</span>
+                        <span style="font-size: 13px; font-weight: 600; color: var(--accent-blue);">API Docs</span>
+                    </div>
+                </div>
+                <!-- X402 Compact Widget -->
+                <div style="background: var(--bg-tertiary); border: 1px solid var(--accent-teal); border-radius: 8px; padding: 8px 12px; cursor: pointer; transition: all 0.2s;" onclick="document.getElementById('x402-modal').style.display = 'flex'">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 14px;">💳</span>
+                        <span style="font-size: 13px; font-weight: 600; color: var(--accent-teal);">X402 Service</span>
+                        <span style="font-size: 12px; color: var(--text-secondary);" id="x402-widget-price">$0.25</span>
+                    </div>
+                </div>
             </div>
         </div>
     </header>
@@ -968,6 +985,276 @@
             </div>
         </div>
 
+        <!-- X402 Modal -->
+        <div id="x402-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 2000; align-items: center; justify-content: center;">
+            <div style="background: var(--bg-secondary); border: 1px solid var(--accent-teal); border-radius: 16px; padding: 32px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; position: relative;">
+                <button onclick="document.getElementById('x402-modal').style.display = 'none'" style="position: absolute; top: 16px; right: 16px; background: none; border: none; color: var(--text-secondary); font-size: 24px; cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: all 0.2s;" onmouseover="this.style.background='var(--bg-tertiary)'; this.style.color='var(--text-primary)'" onmouseout="this.style.background='none'; this.style.color='var(--text-secondary)'">×</button>
+
+                <div class="card-header" style="border: none; padding: 0; margin-bottom: 24px;">
+                    <h2 class="card-title">
+                        💳 X402 Full Demo Experience
+                        <span class="info-icon">ⓘ
+                            <span class="tooltip">Pay $0.25 USDC to get the complete autonomous AI demo: zkML classification + cryptographic proof + live autonomous trade execution. Watch your payment trigger a real on-chain trade! Powered by HTTP 402 Payment Required protocol.</span>
+                        </span>
+                    </h2>
+                </div>
+
+                <!-- Pricing Information -->
+                <div style="background: linear-gradient(135deg, rgba(91, 140, 255, 0.1), rgba(77, 226, 207, 0.1)); border: 1px solid var(--accent-teal); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                        <div>
+                            <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 4px;">Service Price</div>
+                            <div style="font-size: 28px; font-weight: 700; color: var(--accent-teal);" id="x402-price">$0.25 USDC</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 12px; color: var(--text-secondary);">Network</div>
+                            <div style="font-size: 14px; font-weight: 600; color: var(--text-primary);">Base Mainnet</div>
+                        </div>
+                    </div>
+                    <div style="background: var(--bg-tertiary); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+                        <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 6px;">💰 USDC Payment Recipient</div>
+                        <div class="proof-hash" id="x402-recipient" style="color: var(--accent-blue); font-size: 11px;">Loading...</div>
+                    </div>
+                    <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.8;">
+                        ✨ zkML Classification + Groth16 Proof<br/>
+                        🤖 Autonomous Trade Execution<br/>
+                        📊 Live BaseScan Transaction Links
+                    </div>
+                </div>
+
+                <!-- Payment Form -->
+                <div style="background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                    <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">
+                        🎯 Request Classification
+                    </h3>
+
+                    <!-- Step 1: Enter Headline -->
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text-primary);">
+                            1️⃣ Enter Headline to Classify
+                        </label>
+                        <input
+                            type="text"
+                            id="x402-headline"
+                            placeholder="e.g., Bitcoin ETF approved by SEC"
+                            style="width: 100%; padding: 10px 14px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 13px; font-family: inherit;"
+                        />
+                    </div>
+
+                    <!-- Step 2: Send Payment -->
+                    <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-primary); border-radius: 8px; border-left: 4px solid var(--accent-teal);">
+                        <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">
+                            2️⃣ Send USDC Payment on Base Mainnet
+                        </label>
+                        <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+                            Transfer <strong style="color: var(--accent-teal);">$0.25 USDC</strong> to the recipient address above using MetaMask or any Base wallet.<br>
+                            ⚠️ Make sure you're on <strong>Base Mainnet (Chain ID 8453)</strong>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Enter TX Hash -->
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text-primary);">
+                            3️⃣ Enter USDC Transfer Transaction Hash
+                        </label>
+                        <input
+                            type="text"
+                            id="x402-payment-tx"
+                            placeholder="0x..."
+                            style="width: 100%; padding: 10px 14px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 13px; font-family: 'Courier New', monospace;"
+                        />
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button
+                        id="x402-submit-btn"
+                        class="btn btn-primary"
+                        onclick="submitX402Classification()"
+                        style="width: 100%; justify-content: center; font-size: 14px; padding: 12px 20px;"
+                    >
+                        🚀 Get zkML Classification
+                    </button>
+                </div>
+
+                <!-- Results Display -->
+                <div id="x402-results" style="display: none; background: var(--bg-tertiary); border: 1px solid var(--accent-green); border-radius: 12px; padding: 20px;">
+                    <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--accent-green);">
+                        ✅ Classification Results
+                    </h3>
+                    <div id="x402-results-content"></div>
+                </div>
+
+                <!-- Error Display -->
+                <div id="x402-error" style="display: none; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--accent-red); border-radius: 12px; padding: 16px;">
+                    <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 10px; color: var(--accent-red);">
+                        ❌ Error
+                    </h3>
+                    <div id="x402-error-content" style="font-size: 13px; color: var(--text-primary);"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Documentation Modal -->
+        <div id="api-docs-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 2000; align-items: center; justify-content: center;">
+            <div style="background: var(--bg-secondary); border: 1px solid var(--accent-blue); border-radius: 16px; padding: 32px; max-width: 800px; width: 90%; max-height: 90vh; overflow-y: auto; position: relative;">
+                <button onclick="document.getElementById('api-docs-modal').style.display = 'none'" style="position: absolute; top: 16px; right: 16px; background: none; border: none; color: var(--text-secondary); font-size: 24px; cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: all 0.2s;" onmouseover="this.style.background='var(--bg-tertiary)'; this.style.color='var(--text-primary)'" onmouseout="this.style.background='none'; this.style.color='var(--text-secondary)'">×</button>
+
+                <div class="card-header" style="border: none; padding: 0; margin-bottom: 24px;">
+                    <h2 class="card-title" style="color: var(--accent-blue);">
+                        📖 API Documentation
+                    </h2>
+                    <p style="font-size: 14px; color: var(--text-secondary); margin-top: 8px;">
+                        Integrate zkML news classification into your applications
+                    </p>
+                </div>
+
+                <!-- Base URL -->
+                <div style="background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 600;">BASE URL</div>
+                    <code style="font-family: 'Courier New', monospace; color: var(--accent-teal); font-size: 14px;">http://localhost:3000</code>
+                </div>
+
+                <!-- Endpoint 1: GET /api/pricing -->
+                <div style="margin-bottom: 32px;">
+                    <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 12px; color: var(--text-primary);">
+                        <span style="background: var(--accent-green); color: black; padding: 4px 8px; border-radius: 4px; font-size: 11px; margin-right: 8px; font-weight: 700;">GET</span>
+                        /api/pricing
+                    </h3>
+                    <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">Get service pricing information and payment details</p>
+
+                    <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+                        <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 600;">EXAMPLE REQUEST</div>
+                        <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 12px; color: var(--text-primary); overflow-x: auto;">curl http://localhost:3000/api/pricing</pre>
+                    </div>
+
+                    <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px;">
+                        <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 600;">EXAMPLE RESPONSE</div>
+                        <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 11px; color: var(--text-primary); overflow-x: auto; line-height: 1.6;">{
+  "service": "zkML News Classification",
+  "price": "$0.25",
+  "currency": "USDC",
+  "usdcAddress": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+  "recipient": "0x4E3eD682f723DD133252aae032D32f1Ef7EEafb4",
+  "network": "Base Mainnet (Chain ID: 8453)"
+}</pre>
+                    </div>
+                </div>
+
+                <!-- Endpoint 2: POST /api/classify -->
+                <div style="margin-bottom: 32px;">
+                    <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 12px; color: var(--text-primary);">
+                        <span style="background: var(--accent-blue); color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; margin-right: 8px; font-weight: 700;">POST</span>
+                        /api/classify
+                    </h3>
+                    <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">Submit a headline for zkML classification (requires payment)</p>
+
+                    <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+                        <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 600;">REQUEST BODY</div>
+                        <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 11px; color: var(--text-primary); overflow-x: auto; line-height: 1.6;">{
+  "headline": "Bitcoin ETF approved by SEC",
+  "paymentTx": "0xYOUR_USDC_TRANSFER_TX_HASH"
+}</pre>
+                    </div>
+
+                    <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+                        <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 600;">EXAMPLE SUCCESS RESPONSE</div>
+                        <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 11px; color: var(--text-primary); overflow-x: auto; line-height: 1.6;">{
+  "success": true,
+  "service": "zkML News Classification + Autonomous Trading Demo (X402)",
+  "payment": {
+    "verified": true,
+    "txHash": "0x...",
+    "from": "0xYourAddress",
+    "amount": "0.25"
+  },
+  "classification": {
+    "headline": "Bitcoin ETF approved by SEC",
+    "sentiment": "GOOD_NEWS",
+    "confidence": 89,
+    "proofHash": "0x...",
+    "classificationId": "0xabc123...",
+    "oracleTxHash": "0xdef456..."
+  },
+  "autonomousTrade": {
+    "triggered": true,
+    "txHash": "0x789xyz...",
+    "action": "BUY",
+    "basescanUrl": "https://basescan.org/tx/0x789xyz...",
+    "blockNumber": 12345678
+  }
+}</pre>
+                    </div>
+
+                    <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--accent-red); border-radius: 8px; padding: 12px;">
+                        <div style="font-size: 11px; color: var(--accent-red); margin-bottom: 6px; font-weight: 600;">HTTP 402 PAYMENT REQUIRED</div>
+                        <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 11px; color: var(--text-primary); overflow-x: auto; line-height: 1.6;">{
+  "status": 402,
+  "message": "Payment Required",
+  "payment": {
+    "price": "$0.25",
+    "currency": "USDC",
+    "recipient": "0x4E3eD682f723DD133252aae032D32f1Ef7EEafb4"
+  }
+}</pre>
+                    </div>
+                </div>
+
+                <!-- Payment Flow -->
+                <div style="background: linear-gradient(135deg, rgba(91, 140, 255, 0.1), rgba(77, 226, 207, 0.1)); border: 1px solid var(--accent-teal); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                    <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--text-primary);">💳 Payment Flow</h3>
+                    <ol style="margin: 0; padding-left: 20px; font-size: 13px; color: var(--text-primary); line-height: 1.8;">
+                        <li>GET <code style="background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px; font-size: 12px;">/api/pricing</code> to get payment details</li>
+                        <li>Send <strong>$0.25 USDC</strong> on <strong>Base Mainnet</strong> to recipient address</li>
+                        <li>Copy your USDC transfer transaction hash</li>
+                        <li>POST to <code style="background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px; font-size: 12px;">/api/classify</code> with headline and tx hash</li>
+                        <li>Receive zkML classification with cryptographic proof</li>
+                    </ol>
+                </div>
+
+                <!-- JavaScript Integration Example -->
+                <div style="margin-bottom: 24px;">
+                    <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 12px; color: var(--text-primary);">🔧 JavaScript Integration</h3>
+                    <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px;">
+                        <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 11px; color: var(--text-primary); overflow-x: auto; line-height: 1.6;">// Step 1: Get pricing info
+const pricing = await fetch('http://localhost:3000/api/pricing')
+  .then(r => r.json());
+
+// Step 2: Send USDC payment using ethers.js
+const usdc = new ethers.Contract(
+  pricing.usdcAddress,
+  ['function transfer(address to, uint256 amount)'],
+  signer
+);
+const tx = await usdc.transfer(
+  pricing.recipient,
+  ethers.parseUnits('0.25', 6)
+);
+await tx.wait();
+
+// Step 3: Request classification
+const result = await fetch('http://localhost:3000/api/classify', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    headline: 'Your news headline here',
+    paymentTx: tx.hash
+  })
+}).then(r => r.json());
+
+console.log(result.classification);
+// { sentiment: "GOOD_NEWS", confidence: 89, proofHash: "0x..." }</pre>
+                    </div>
+                </div>
+
+                <!-- Demo Endpoint -->
+                <div style="background: rgba(255, 193, 7, 0.1); border: 1px solid var(--accent-yellow); border-radius: 12px; padding: 16px;">
+                    <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 8px; color: var(--accent-yellow);">🎬 Free Demo Endpoint</h3>
+                    <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">For testing without payment:</p>
+                    <code style="font-family: 'Courier New', monospace; color: var(--text-primary); font-size: 12px;">POST http://localhost:3000/api/demo/classify</code>
+                </div>
+            </div>
+        </div>
+
         <!-- Contract Addresses -->
         <div class="dashboard-card">
             <div class="card-header">
@@ -1019,6 +1306,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             console.log('🚀 zkML News Oracle UI initialized');
             loadDashboard();
+            loadX402Pricing();
             startAutoRefresh();
         });
 
@@ -1467,6 +1755,193 @@
 
         // Note: In production, the backend would emit events when proof generation starts
         // For now, users can manually trigger by visiting the service
+
+        // ===== X402 Payment Service Functions =====
+
+        /**
+         * Load X402 pricing information
+         */
+        async function loadX402Pricing() {
+            try {
+                const response = await fetch(`${API_URL}/api/pricing`);
+                const data = await response.json();
+
+                // Update pricing display
+                document.getElementById('x402-price').textContent = `${data.price} ${data.currency || 'USDC'}`;
+                document.getElementById('x402-widget-price').textContent = data.price || '$0.25';
+
+                // Use fallback oracle wallet address if recipient is not set
+                const recipientAddress = data.recipient || '0x4E3eD682f723DD133252aae032D32f1Ef7EEafb4';
+                document.getElementById('x402-recipient').textContent = recipientAddress;
+
+                console.log('💳 X402 pricing loaded:', data);
+            } catch (error) {
+                console.error('Error loading X402 pricing:', error);
+                // Use fallback oracle wallet address on error
+                document.getElementById('x402-recipient').textContent = '0x4E3eD682f723DD133252aae032D32f1Ef7EEafb4';
+            }
+        }
+
+        /**
+         * Submit X402 classification request
+         */
+        async function submitX402Classification() {
+            try {
+                // Hide previous results/errors
+                document.getElementById('x402-results').style.display = 'none';
+                document.getElementById('x402-error').style.display = 'none';
+
+                // Get input values
+                const headline = document.getElementById('x402-headline').value.trim();
+                const paymentTx = document.getElementById('x402-payment-tx').value.trim();
+
+                // Validate inputs
+                if (!headline) {
+                    showX402Error('Please enter a headline to classify');
+                    return;
+                }
+
+                // Update button state
+                const btn = document.getElementById('x402-submit-btn');
+                const originalText = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<div class="spinner"></div> Processing...';
+
+                // Make API request
+                const response = await fetch(`${API_URL}/api/classify`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        headline: headline,
+                        paymentTx: paymentTx || undefined
+                    })
+                });
+
+                const data = await response.json();
+
+                // Reset button
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+
+                // Handle response
+                if (response.status === 402) {
+                    // Payment required
+                    showX402Error(`
+                        <strong>Payment Required (HTTP 402)</strong><br><br>
+                        Please send <strong>${data.payment?.price || '0.0001 ETH'}</strong> to:<br>
+                        <code style="word-break: break-all; color: var(--accent-teal);">${data.payment?.recipient || 'See above'}</code><br><br>
+                        Then enter the transaction hash above and try again.
+                    `);
+                } else if (!response.ok) {
+                    // Other error
+                    showX402Error(data.error || data.message || 'Request failed');
+                } else if (data.success) {
+                    // Success - show results
+                    showX402Results(data);
+                } else {
+                    showX402Error(data.error || 'Unknown error occurred');
+                }
+
+            } catch (error) {
+                console.error('Error submitting X402 classification:', error);
+                showX402Error(`Network error: ${error.message}`);
+
+                // Reset button
+                const btn = document.getElementById('x402-submit-btn');
+                btn.disabled = false;
+                btn.innerHTML = '🚀 Get zkML Classification';
+            }
+        }
+
+        /**
+         * Display X402 classification results
+         */
+        function showX402Results(data) {
+            const resultsDiv = document.getElementById('x402-results');
+            const contentDiv = document.getElementById('x402-results-content');
+
+            const classification = data.classification;
+            const payment = data.payment;
+
+            contentDiv.innerHTML = `
+                <!-- Headline -->
+                <div style="margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--border-color);">
+                    <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 8px;">Headline</div>
+                    <div style="font-size: 18px; font-weight: 600; color: var(--text-primary);">${classification.headline}</div>
+                </div>
+
+                <!-- Classification Results -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                    <div style="background: var(--bg-primary); padding: 16px; border-radius: 8px;">
+                        <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Sentiment</div>
+                        <span class="sentiment-badge ${classification.sentiment.toLowerCase().replace('_news', '')}" style="font-size: 16px; padding: 8px 16px;">
+                            ${classification.sentiment}
+                        </span>
+                    </div>
+                    <div style="background: var(--bg-primary); padding: 16px; border-radius: 8px;">
+                        <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Confidence</div>
+                        <div style="font-size: 24px; font-weight: 700; color: var(--accent-teal);">${classification.confidence}%</div>
+                    </div>
+                </div>
+
+                <!-- zkML Proof -->
+                <div style="background: var(--bg-primary); padding: 16px; border-radius: 8px; margin-bottom: 24px;">
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">🔐 zkML Proof Hash</div>
+                    <div class="proof-hash" style="color: var(--accent-teal);">${classification.proofHash}</div>
+                </div>
+
+                <!-- Payment Verification -->
+                <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(77, 226, 207, 0.1)); border: 1px solid var(--accent-green); border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+                    <div style="font-size: 14px; font-weight: 700; color: var(--accent-green); margin-bottom: 12px;">
+                        ✅ USDC Payment Verified
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; font-size: 12px;">
+                        <div>
+                            <div style="color: var(--text-secondary); margin-bottom: 4px;">From</div>
+                            <div class="proof-hash" style="font-size: 10px; color: var(--text-primary);">${payment.from}</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--text-secondary); margin-bottom: 4px;">Amount</div>
+                            <div style="font-weight: 600; color: var(--accent-green);">$${payment.amount} USDC</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--text-secondary); margin-bottom: 4px;">Transaction</div>
+                            <a href="https://basescan.org/tx/${payment.txHash}" target="_blank" style="color: var(--accent-blue); text-decoration: none; font-size: 10px; font-family: 'Courier New', monospace; word-break: break-all;">
+                                ${payment.txHash}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Service Info -->
+                <div style="padding: 16px; background: rgba(91, 140, 255, 0.1); border-radius: 8px; border-left: 4px solid var(--accent-blue);">
+                    <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+                        ℹ️ This classification was generated using <strong>JOLT-Atlas zkML</strong> with <strong>Groth16 proof</strong>, verified via <strong>X402 payment protocol</strong> on Base Mainnet.
+                    </div>
+                </div>
+            `;
+
+            resultsDiv.style.display = 'block';
+
+            // Scroll to results
+            resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        /**
+         * Display X402 error message
+         */
+        function showX402Error(message) {
+            const errorDiv = document.getElementById('x402-error');
+            const contentDiv = document.getElementById('x402-error-content');
+
+            contentDiv.innerHTML = message;
+            errorDiv.style.display = 'block';
+
+            // Scroll to error
+            errorDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
     </script>
 </body>
 </html>

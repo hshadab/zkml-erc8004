@@ -6,6 +6,7 @@ import { NewsClassifier } from './classifier.js';
 import { OraclePoster } from './poster.js';
 import { logger } from './logger.js';
 import { BaseTrader } from './baseTrader.js';
+import { X402Service } from './x402Service.js';
 import { config, validateConfig } from './config.js';
 import { mkdir } from 'fs/promises';
 
@@ -18,6 +19,7 @@ class NewsService {
     this.fetcher = new NewsFetcher();
     this.classifier = new NewsClassifier();
     this.poster = new OraclePoster();
+    this.x402 = new X402Service();
     this.isProcessing = false;
     this.app = express();
   }
@@ -52,6 +54,14 @@ class NewsService {
     } else {
       logger.warn('⚠️  Oracle configuration missing. Skipping poster initialization.');
       logger.warn('   Service will run in test mode (fetch + classify only)\n');
+    }
+
+    // Initialize X402 payment service
+    if (config.oraclePrivateKey) {
+      const x402Success = await this.x402.initialize();
+      if (!x402Success) {
+        logger.warn('⚠️  X402 service initialization failed. Paid API will not be available.\n');
+      }
     }
 
     logger.info('✅ Service initialized successfully\n');
@@ -166,8 +176,10 @@ class NewsService {
     this.app.listen(config.port, () => {
       logger.info(`🌐 API server listening on http://localhost:${config.port}`);
       logger.info(`\n📝 Endpoints:`);
-      logger.info(`   GET  /status           - Service status`);
-      logger.info(`   POST /api/demo/classify - Manual classification (for demos)`);
+      logger.info(`   GET  /status             - Service status`);
+      logger.info(`   POST /api/demo/classify  - Manual classification (for demos)`);
+      logger.info(`   GET  /api/pricing        - X402 pricing information`);
+      logger.info(`   POST /api/classify       - X402 paid classification (requires payment)`);
       logger.info(`\n✨ Service is running! Press Ctrl+C to stop.\n`);
     });
   }
@@ -244,6 +256,142 @@ class NewsService {
 
       } catch (error) {
         logger.error('Manual classification failed:', error);
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    // X402 Pricing endpoint
+    this.app.get('/api/pricing', (req, res) => {
+      res.json(this.x402.getPricing());
+    });
+
+    // X402 Paid classification endpoint
+    this.app.post('/api/classify', async (req, res) => {
+      try {
+        const { headline, paymentTx } = req.body;
+
+        if (!headline) {
+          return res.status(400).json({ error: 'Headline required' });
+        }
+
+        if (!paymentTx) {
+          // Return HTTP 402 Payment Required
+          return res.status(402).json(this.x402.getPaymentRequiredResponse());
+        }
+
+        // Verify payment
+        logger.info(`\n💳 Payment verification requested for headline: "${headline}"`);
+        const paymentResult = await this.x402.verifyPayment(paymentTx);
+
+        if (!paymentResult.valid) {
+          return res.status(402).json({
+            status: 402,
+            message: 'Payment verification failed',
+            error: paymentResult.error,
+            code: paymentResult.code,
+            payment: this.x402.getPricing()
+          });
+        }
+
+        logger.info(`✅ Payment verified! Processing classification...`);
+
+        // Classify the headline
+        const classification = await this.classifier.classify({
+          headline,
+          source: 'Paid API',
+          reliability: 1.0
+        });
+
+        if (!classification.success) {
+          return res.status(400).json({
+            error: classification.reason || classification.error
+          });
+        }
+
+        logger.info(`✅ Classification complete for paid request`);
+
+        // Post classification to oracle contract
+        let oracleResult = null;
+        let tradeResult = null;
+
+        if (this.poster.contract) {
+          try {
+            logger.info(`📝 Posting classification to oracle contract...`);
+            oracleResult = await this.poster.postClassification(
+              classification.headline,
+              classification.sentiment,
+              classification.confidence,
+              classification.proofHash
+            );
+
+            if (oracleResult.success && oracleResult.classificationId) {
+              logger.info(`✅ Classification posted! ID: ${oracleResult.classificationId}`);
+
+              // Trigger autonomous trading agent for full demo experience
+              try {
+                logger.info(`🤖 Triggering TradingAgent for full demo experience...`);
+                const trader = new BaseTrader();
+                await trader.initialize();
+
+                // Execute trade based on classification
+                const tradeResponse = await trader.executeTrade(oracleResult.classificationId);
+
+                if (tradeResponse.success) {
+                  logger.info(`✅ Autonomous trade executed! Tx: ${tradeResponse.txHash}`);
+                  tradeResult = {
+                    triggered: true,
+                    txHash: tradeResponse.txHash,
+                    action: tradeResponse.action || 'TRADE',
+                    basescanUrl: `https://basescan.org/tx/${tradeResponse.txHash}`,
+                    blockNumber: tradeResponse.blockNumber
+                  };
+                } else {
+                  logger.warn(`⚠️  Trade execution failed: ${tradeResponse.error}`);
+                  tradeResult = {
+                    triggered: false,
+                    error: tradeResponse.error || 'Trade execution failed'
+                  };
+                }
+              } catch (tradeErr) {
+                logger.error(`❌ Failed to trigger trading agent:`, tradeErr);
+                tradeResult = {
+                  triggered: false,
+                  error: tradeErr.message
+                };
+              }
+            }
+          } catch (postErr) {
+            logger.error(`❌ Failed to post classification:`, postErr);
+          }
+        }
+
+        // Return classification with proof and trade details
+        res.json({
+          success: true,
+          service: 'zkML News Classification + Autonomous Trading Demo (X402)',
+          payment: {
+            verified: true,
+            txHash: paymentResult.txHash,
+            from: paymentResult.from,
+            amount: paymentResult.amount
+          },
+          classification: {
+            headline: classification.headline,
+            sentiment: ['BAD_NEWS', 'NEUTRAL', 'GOOD_NEWS'][classification.sentiment],
+            confidence: classification.confidence,
+            proofHash: classification.proofHash,
+            classificationId: oracleResult?.classificationId || null,
+            oracleTxHash: oracleResult?.txHash || null
+          },
+          autonomousTrade: tradeResult || {
+            triggered: false,
+            error: 'Trading agent not configured'
+          },
+          timestamp: new Date().toISOString()
+        });
+
+      } catch (error) {
+        logger.error('Paid classification failed:', error);
         res.status(500).json({ error: error.message });
       }
     });

@@ -314,6 +314,86 @@ curl -X POST http://localhost:3000/api/demo/classify \
    - Uniswap V3 Factory on Base Sepolia
    - Available pairs at https://app.uniswap.org/ (switch to Base Sepolia)
 
+## 💳 Step 10: Test X402 Paid Classification Service (Optional)
+
+The service includes a paid API endpoint using X402 protocol for external consumers.
+
+### Get Pricing Information
+
+```bash
+curl http://localhost:3000/api/pricing
+```
+
+Response:
+```json
+{
+  "service": "zkML News Classification",
+  "price": "$0.25",
+  "currency": "USDC",
+  "usdcAddress": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+  "recipient": "0xYourOracleWalletAddress",
+  "network": "Base Mainnet (Chain ID: 8453)"
+}
+```
+
+### Test Without Payment (Returns HTTP 402)
+
+```bash
+curl -X POST http://localhost:3000/api/classify \
+  -H "Content-Type: application/json" \
+  -d '{"headline": "Bitcoin price hits new high"}'
+```
+
+Response:
+```json
+{
+  "status": 402,
+  "message": "Payment Required",
+  "payment": { ...pricing details... }
+}
+```
+
+### Send Payment and Get Classification
+
+1. **Send $0.25 USDC on Base Mainnet** to the recipient address shown in pricing
+   - Use MetaMask, Rainbow, or any Base wallet
+   - USDC Contract: `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`
+   - Amount: `0.25` USDC
+
+2. **Request classification with payment proof:**
+
+```bash
+curl -X POST http://localhost:3000/api/classify \
+  -H "Content-Type: application/json" \
+  -d '{
+    "headline": "Bitcoin price hits new high",
+    "paymentTx": "0xYOUR_TRANSACTION_HASH_HERE"
+  }'
+```
+
+Response:
+```json
+{
+  "success": true,
+  "payment": {
+    "verified": true,
+    "txHash": "0x...",
+    "from": "0xYourAddress",
+    "amount": "0.25"
+  },
+  "classification": {
+    "headline": "Bitcoin price hits new high",
+    "sentiment": "GOOD_NEWS",
+    "confidence": 89,
+    "proofHash": "0x..."
+  }
+}
+```
+
+### Access X402 Widget in UI
+
+Visit http://localhost:3001 and click the "💳 X402 Service $0.25" widget in the top-right corner to access the payment modal.
+
 ## 🎉 Next Steps
 
 Once everything is working:
@@ -321,8 +401,9 @@ Once everything is working:
 1. **Let it run for 24 hours** - Watch autonomous classifications and trades
 2. **Monitor the dashboard** - See real-time updates
 3. **Test different scenarios** - Good news, bad news, neutral
-4. **Integrate JOLT-Atlas** - Replace mock proofs with real zkML proofs
-5. **Build the frontend** - Visualize everything
+4. **Try the X402 API** - Test paid classification service
+5. **Integrate JOLT-Atlas** - Replace mock proofs with real zkML proofs
+6. **Build custom integrations** - Use the API in your own applications
 
 ## 📚 Additional Resources
 

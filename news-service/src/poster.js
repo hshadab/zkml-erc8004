@@ -19,8 +19,9 @@ export class OraclePoster {
     try {
       logger.info('Initializing oracle poster...');
 
-      // Connect with extended timeout + polling (helps in WSL2 environments)
-      const fetchReq = new ethers.FetchRequest(config.rpcUrl);
+      // Connect to Base Mainnet with extended timeout + polling (helps in WSL2 environments)
+      const rpcUrl = config.baseMainnetRpcUrl || config.rpcUrl;
+      const fetchReq = new ethers.FetchRequest(rpcUrl);
       fetchReq.timeout = 180000; // 180s
       this.provider = new ethers.JsonRpcProvider(fetchReq);
       this.provider.polling = true;

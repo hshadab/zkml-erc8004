@@ -7,6 +7,7 @@ dotenv.config();
 export const config = {
   // Blockchain
   rpcUrl: process.env.POLYGON_RPC_URL || 'https://polygon-rpc.com',
+  baseMainnetRpcUrl: process.env.BASE_MAINNET_RPC_URL,
   oraclePrivateKey: process.env.ORACLE_PRIVATE_KEY,
   // Prefer Polygon envs; fall back to legacy names if present
   newsOracleAddress: process.env.POLYGON_ORACLE || process.env.NEWS_ORACLE_CONTRACT_ADDRESS,
