@@ -726,6 +726,183 @@
             min-width: 80px;
             text-align: center;
         }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 1024px) {
+            .header {
+                padding: 16px;
+            }
+
+            .header-content {
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .logo-section {
+                justify-content: center;
+                text-align: center;
+            }
+
+            .header-buttons {
+                justify-content: center;
+                width: 100%;
+            }
+
+            .container {
+                padding: 16px;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 12px;
+            }
+
+            .logo-section img {
+                height: 28px !important;
+            }
+
+            .logo-section span {
+                font-size: 20px !important;
+            }
+
+            .header-buttons {
+                gap: 8px;
+                font-size: 14px;
+            }
+
+            .header-buttons > div,
+            .header-buttons > a {
+                padding: 8px 12px !important;
+            }
+
+            .header-buttons span {
+                font-size: 14px !important;
+            }
+
+            .status-indicator {
+                flex-direction: row;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .status-indicator span {
+                font-size: 14px !important;
+            }
+
+            .container {
+                padding: 12px;
+            }
+
+            .card {
+                padding: 16px;
+            }
+
+            .card-header h2 {
+                font-size: 20px;
+            }
+
+            .stat-value {
+                font-size: 28px;
+            }
+
+            .proof-generation-banner {
+                padding: 16px;
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .proof-timer {
+                font-size: 16px;
+                padding: 6px 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                padding: 10px;
+            }
+
+            .logo-section {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .logo-section img {
+                height: 24px !important;
+            }
+
+            .logo-section span {
+                font-size: 16px !important;
+            }
+
+            .header-buttons {
+                flex-direction: column;
+                gap: 8px;
+                width: 100%;
+            }
+
+            .header-buttons > div,
+            .header-buttons > a {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .container {
+                padding: 8px;
+            }
+
+            .card {
+                padding: 12px;
+            }
+
+            .card-header h2 {
+                font-size: 18px;
+            }
+
+            .stat-value {
+                font-size: 24px;
+            }
+
+            .proof-generation-banner {
+                padding: 12px;
+            }
+
+            .proof-banner-title {
+                font-size: 14px;
+            }
+
+            .proof-banner-subtitle {
+                font-size: 12px;
+            }
+
+            /* Modal responsiveness */
+            #about-modal > div,
+            #api-docs-modal > div,
+            #x402-modal > div {
+                width: 95% !important;
+                padding: 20px !important;
+                max-height: 85vh !important;
+            }
+
+            /* Button text wrapping */
+            .header-buttons span {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+        }
+
+        /* Ensure viewport is properly set */
+        @viewport {
+            width: device-width;
+            zoom: 1.0;
+        }
     </style>
 </head>
 <body>
@@ -736,7 +913,7 @@
                 <img src="https://cdn.prod.website-files.com/65d52b07d5bc41614daa723f/665df12739c532f45b665fe7_logo-novanet.svg" alt="NovaNET" style="height: 32px;">
                 <span style="font-size: 29px; font-weight: 700; color: var(--text-primary);">zkML for ERC-8004</span>
             </div>
-            <div style="display: flex; align-items: center; gap: 16px;">
+            <div class="header-buttons" style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
                 <!-- About Button -->
                 <div style="background: var(--bg-tertiary); border: 1px solid var(--accent-teal); border-radius: 8px; padding: 10px 16px; cursor: pointer; transition: all 0.2s;" onclick="document.getElementById('about-modal').style.display = 'flex'" onmouseover="this.style.borderColor='var(--accent-blue)'" onmouseout="this.style.borderColor='var(--accent-teal)'">
                     <span style="font-weight: 600; font-size: 14px; color: var(--accent-teal);">About</span>
@@ -749,24 +926,26 @@
                     </svg>
                 </a>
 
-                <div class="status-indicator">
-                    <div class="status-dot"></div>
-                    <span id="status-text" style="font-size: 20px; font-weight: 700;">Live on Base</span>
-                </div>
-                <!-- API Docs Widget -->
+                <!-- API Widget -->
                 <div style="background: var(--bg-tertiary); border: 1px solid var(--accent-blue); border-radius: 8px; padding: 10px 16px; cursor: pointer; transition: all 0.2s;" onclick="document.getElementById('api-docs-modal').style.display = 'flex'" onmouseover="this.style.borderColor='var(--accent-teal)'" onmouseout="this.style.borderColor='var(--accent-blue)'">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span style="font-size: 20px;">📖</span>
-                        <span style="font-size: 20px; font-weight: 700; color: var(--accent-blue);">API Docs</span>
+                        <span style="font-size: 20px; font-weight: 700; color: var(--accent-blue);">API</span>
                     </div>
                 </div>
+
                 <!-- x402 Compact Widget -->
                 <div style="background: var(--bg-tertiary); border: 1px solid var(--accent-teal); border-radius: 8px; padding: 10px 16px; cursor: pointer; transition: all 0.2s;" onclick="document.getElementById('x402-modal').style.display = 'flex'">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span style="font-size: 20px;">💳</span>
                         <span style="font-size: 20px; font-weight: 700; color: var(--accent-teal);">x402 Service</span>
-                        <span style="font-size: 18px; font-weight: 600; color: var(--text-secondary);" id="x402-widget-price">$0.25</span>
                     </div>
+                </div>
+
+                <!-- Status Indicator (rightmost) -->
+                <div class="status-indicator">
+                    <div class="status-dot"></div>
+                    <span id="status-text" style="font-size: 20px; font-weight: 700;">Live on Base</span>
                 </div>
             </div>
         </div>
