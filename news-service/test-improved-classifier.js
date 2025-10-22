@@ -1,15 +1,8 @@
-import vader from 'vader-sentiment';
-
 /**
- * Extract features from news headline for classification
- * Simplified approach: 3 core features
- *
- * Features:
- * 1. Sentiment score (-1.0 to 1.0)
- * 2. Positive keywords flag (0 or 1)
- * 3. Negative keywords flag (0 or 1)
+ * Test the improved classifier on the failing headlines
  */
 
+// Improved keywords (from updated featureExtractor.js)
 const POSITIVE_KEYWORDS = [
   'approve', 'approved', 'adoption', 'bullish', 'surge', 'surges', 'rally',
   'gain', 'gains', 'rise', 'rising', 'up', 'breakthrough', 'launch', 'partnership',
@@ -29,55 +22,38 @@ const NEGATIVE_KEYWORDS = [
   'negative', 'low', 'crackdown'
 ];
 
-/**
- * Check if a keyword exists as a whole word in text
- * @param {string} text - Lowercase text to search
- * @param {string} keyword - Keyword to find
- * @returns {boolean} True if keyword found as whole word
- */
 function hasWholeWord(text, keyword) {
   // Use word boundary regex to avoid false matches like "low" in "following"
   const regex = new RegExp(`\\b${keyword}\\b`, 'i');
   return regex.test(text);
 }
 
-/**
- * Extract features from headline
- * @param {string} headline - News headline
- * @returns {Array<number>} Feature vector [sentiment, hasPositive, hasNegative, posCount, negCount]
- */
-export function extractFeatures(headline) {
+function extractFeatures(headline) {
   const lower = headline.toLowerCase();
 
-  // 1. Sentiment score using VADER
-  const sentimentResult = vader.SentimentIntensityAnalyzer.polarity_scores(headline);
-  const sentiment = sentimentResult.compound; // Range: -1.0 to 1.0
-
-  // 2. Check for positive keywords (using word boundaries) and count them
+  // Simplified sentiment score (without VADER)
+  // Count positive vs negative words
   let posCount = 0;
-  POSITIVE_KEYWORDS.forEach(keyword => {
-    if (hasWholeWord(lower, keyword)) posCount++;
-  });
-  const hasPositive = posCount > 0 ? 1 : 0;
-
-  // 3. Check for negative keywords (using word boundaries) and count them
   let negCount = 0;
-  NEGATIVE_KEYWORDS.forEach(keyword => {
-    if (hasWholeWord(lower, keyword)) negCount++;
+
+  POSITIVE_KEYWORDS.forEach(kw => {
+    if (hasWholeWord(lower, kw)) posCount++;
   });
+
+  NEGATIVE_KEYWORDS.forEach(kw => {
+    if (hasWholeWord(lower, kw)) negCount++;
+  });
+
+  // Estimate sentiment based on keyword balance
+  const sentiment = (posCount - negCount) / Math.max(1, posCount + negCount);
+
+  const hasPositive = posCount > 0 ? 1 : 0;
   const hasNegative = negCount > 0 ? 1 : 0;
 
   return [sentiment, hasPositive, hasNegative, posCount, negCount];
 }
 
-/**
- * Map features to classification (simple rule-based for now)
- * In production, this would use the ONNX model
- *
- * @param {Array<number>} features - Feature vector
- * @returns {Object} Classification result
- */
-export function mapFeaturesToClassification(features) {
+function mapFeaturesToClassification(features) {
   const [sentiment, hasPositive, hasNegative, posCount = 0, negCount = 0] = features;
 
   // Improved classification logic with mixed sentiment handling
@@ -96,7 +72,7 @@ export function mapFeaturesToClassification(features) {
       classification = 0; // BAD_NEWS
       confidence = Math.min(95, 70 + (negCount - posCount) * 10);
     } else {
-      // Equal keywords → use VADER sentiment as tiebreaker
+      // Equal keywords → use sentiment as tiebreaker
       if (sentiment > 0.1) {
         classification = 2; // GOOD_NEWS
         confidence = 75;
@@ -132,53 +108,87 @@ export function mapFeaturesToClassification(features) {
     confidence = Math.min(100, 60 + Math.abs(sentiment * 40));
   }
 
-  // Return classification with probabilities
-  const probabilities = [0, 0, 0];
-  probabilities[classification] = confidence / 100;
-
-  // Distribute remaining probability
-  const remaining = (100 - confidence) / 200;
-  for (let i = 0; i < 3; i++) {
-    if (i !== classification) {
-      probabilities[i] = remaining;
-    }
-  }
-
   return {
-    sentiment: classification, // 0=BAD, 1=NEUTRAL, 2=GOOD
+    sentiment: classification,
     confidence: Math.round(confidence),
-    probabilities,
-    features
+    sentimentLabel: ['BAD', 'NEUTRAL', 'GOOD'][classification]
   };
 }
 
-/**
- * Test the feature extraction
- */
-export function testFeatureExtraction() {
-  const testHeadlines = [
-    "SEC approves spot Bitcoin ETF",
-    "Major crypto exchange hacked, $500M stolen",
-    "Bitcoin price remains stable amid sideways trading",
-    "Ethereum upgrade launches successfully",
-    "Regulatory crackdown threatens crypto industry"
-  ];
+// Test cases from the live demo
+const testCases = [
+  {
+    headline: "HBAR Drops 5.4% to $0.1695 as Key Support Crumbles",
+    expected: "BAD"
+  },
+  {
+    headline: "Bitcoin Fear and Greed Index May Signal Prolonged Market Anxiety",
+    expected: "BAD"
+  },
+  {
+    headline: "Crypto Markets Today: Zcash Surges to Lead Altcoin Market as Bitcoin Stalls Near $108K",
+    expected: "NEUTRAL or GOOD"  // Mixed: surges (pos) + stalls (neg)
+  },
+  {
+    headline: "Galaxy Digital Price Targets Hiked Across Street Following Record 3Q Earnings",
+    expected: "GOOD"
+  },
+  {
+    headline: "Deribit, Komainu Join Forces for Institutional In-Custody Crypto Trading",
+    expected: "GOOD"
+  },
+  {
+    headline: "Coinbase Is Building Private Transactions for Base, CEO Brian Armstrong Says",
+    expected: "GOOD"
+  },
+  {
+    headline: "Crypto Prime Broker FalconX to Buy ETF Provider 21Shares: WSJ",
+    expected: "GOOD"
+  },
+  {
+    headline: "Bitcoin ETF approval sends crypto markets to all-time highs",
+    expected: "GOOD"
+  },
+  {
+    headline: "Bitcoin surges to new all-time high as institutional adoption accelerates",
+    expected: "GOOD"
+  }
+];
 
-  console.log('Testing Feature Extraction:\n');
+console.log("Testing Improved Classifier");
+console.log("=" .repeat(80));
+console.log();
 
-  testHeadlines.forEach(headline => {
-    const features = extractFeatures(headline);
-    const result = mapFeaturesToClassification(features);
+let correct = 0;
+let total = testCases.length;
 
-    console.log(`Headline: "${headline}"`);
-    console.log(`Features: [${features.map(f => f.toFixed(2)).join(', ')}]`);
-    console.log(`Classification: ${['BAD', 'NEUTRAL', 'GOOD'][result.sentiment]}`);
-    console.log(`Confidence: ${result.confidence}%`);
-    console.log(`Probabilities: [${result.probabilities.map(p => (p * 100).toFixed(1) + '%').join(', ')}]\n`);
-  });
-}
+testCases.forEach(({ headline, expected }) => {
+  const features = extractFeatures(headline);
+  const result = mapFeaturesToClassification(features);
 
-// Run test if executed directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  testFeatureExtraction();
+  const [sentiment, hasPositive, hasNegative, posCount, negCount] = features;
+
+  const matchedPos = POSITIVE_KEYWORDS.filter(kw => hasWholeWord(headline.toLowerCase(), kw));
+  const matchedNeg = NEGATIVE_KEYWORDS.filter(kw => hasWholeWord(headline.toLowerCase(), kw));
+
+  const isCorrect = expected.includes(result.sentimentLabel);
+  if (isCorrect) correct++;
+
+  const status = isCorrect ? "✓" : "✗";
+
+  console.log(`${status} "${headline}"`);
+  console.log(`   Expected: ${expected}, Got: ${result.sentimentLabel} (${result.confidence}%)`);
+  console.log(`   Features: sentiment=${sentiment.toFixed(2)}, pos=${posCount}, neg=${negCount}`);
+  console.log(`   Matched Positive (${posCount}): ${matchedPos.length > 0 ? matchedPos.join(', ') : 'none'}`);
+  console.log(`   Matched Negative (${negCount}): ${matchedNeg.length > 0 ? matchedNeg.join(', ') : 'none'}`);
+  console.log();
+});
+
+console.log("=" .repeat(80));
+console.log(`Accuracy: ${correct}/${total} = ${(correct/total*100).toFixed(1)}%`);
+
+if (correct >= total * 0.8) {
+  console.log("✅ Classifier significantly improved!");
+} else {
+  console.log("⚠️  Still needs work");
 }
