@@ -1117,27 +1117,29 @@
                             <span class="tooltip">When our Oracle AI classifies news, it creates a validation request asking other AI agents to verify the work. This table shows pending, approved, or rejected validations. Other agents can validate the Oracle's work to build trust in the network.</span>
                         </span>
                     </h3>
-                    <table class="registry-table">
-                        <thead>
-                            <tr>
-                                <th>Classification ID</th>
-                                <th>Agent Token</th>
-                                <th>Status</th>
-                                <th>Responses</th>
-                                <th>Request Time</th>
-                            </tr>
-                        </thead>
-                        <tbody id="validations-tbody">
-                            <tr>
-                                <td colspan="5">
-                                    <div class="empty-state">
-                                        <div class="empty-state-icon">⏳</div>
-                                        <p>Loading validation history...</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div style="max-height: 280px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 12px;">
+                        <table class="registry-table" style="margin: 0;">
+                            <thead style="position: sticky; top: 0; background: var(--bg-secondary); z-index: 1;">
+                                <tr>
+                                    <th>Classification ID</th>
+                                    <th>Agent Token</th>
+                                    <th>Status</th>
+                                    <th>Responses</th>
+                                    <th>Request Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="validations-tbody">
+                                <tr>
+                                    <td colspan="5">
+                                        <div class="empty-state">
+                                            <div class="empty-state-icon">⏳</div>
+                                            <p>Loading validation history...</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
