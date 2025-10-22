@@ -1685,14 +1685,21 @@
                                 <div>💼 Value Before: $${t.portfolioValueBefore}</div>
                                 <div>💼 Value After: $${t.portfolioValueAfter > 0 ? t.portfolioValueAfter : 'Pending'}</div>
                             </div>
-                            ${t.txHash && t.txHash !== '0x' ? `
-                                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color);">
-                                    <a href="${t.explorerUrl}" target="_blank" style="color: var(--accent-blue); text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
-                                        🔗 View on BaseScan
+                            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 6px;">
+                                ${t.txHash && t.txHash !== '0x' ? `
+                                    <a href="https://basescan.org/tx/${t.txHash}" target="_blank" style="color: var(--accent-blue); text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                                        🔗 View Transaction
                                         <span style="font-family: 'Courier New', monospace;">${t.txHash.slice(0, 10)}...</span>
                                     </a>
-                                </div>
-                            ` : ''}
+                                ` : `
+                                    <a href="https://basescan.org/address/0x0D43DC16eFC1322Df3CE2B2852558993918A122B" target="_blank" style="color: var(--accent-blue); text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                                        🔗 View TradingAgent Contract
+                                    </a>
+                                `}
+                                <a href="https://basescan.org/address/0xe92c7aE9E894a8701583a43363676ff878d5b6ed#readContract#F3" target="_blank" style="color: var(--accent-teal); text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                                    📋 View Classification on Oracle
+                                </a>
+                            </div>
                         </div>
                     `;
                 }).join('');
