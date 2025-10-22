@@ -733,13 +733,25 @@
     <header class="header">
         <div class="header-content">
             <div class="logo-section">
-                <img src="https://cdn.prod.website-files.com/65d52b07d5bc41614daa723f/665df12739c532f45b665fe7_logo-novanet.svg" alt="NovaNET" style="height: 40px;">
-                <span style="font-size: 36px; font-weight: 700; color: var(--text-primary);">zkML for ERC-8004</span>
+                <img src="https://cdn.prod.website-files.com/65d52b07d5bc41614daa723f/665df12739c532f45b665fe7_logo-novanet.svg" alt="NovaNET" style="height: 32px;">
+                <span style="font-size: 29px; font-weight: 700; color: var(--text-primary);">zkML for ERC-8004</span>
             </div>
             <div style="display: flex; align-items: center; gap: 16px;">
+                <!-- About Button -->
+                <div style="background: var(--bg-tertiary); border: 1px solid var(--accent-teal); border-radius: 8px; padding: 10px 16px; cursor: pointer; transition: all 0.2s;" onclick="document.getElementById('about-modal').style.display = 'flex'" onmouseover="this.style.borderColor='var(--accent-blue)'" onmouseout="this.style.borderColor='var(--accent-teal)'">
+                    <span style="font-weight: 600; font-size: 14px; color: var(--accent-teal);">About</span>
+                </div>
+
+                <!-- GitHub Link -->
+                <a href="https://github.com/hshadab/zkml-erc8004" target="_blank" style="display: flex; align-items: center; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s; text-decoration: none;" onmouseover="this.style.borderColor='var(--accent-teal)'" onmouseout="this.style.borderColor='var(--border-color)'">
+                    <svg height="20" width="20" viewBox="0 0 16 16" fill="currentColor" style="color: var(--text-primary);">
+                        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path>
+                    </svg>
+                </a>
+
                 <div class="status-indicator">
                     <div class="status-dot"></div>
-                    <span id="status-text" style="font-size: 20px; font-weight: 700;">Live on Base Mainnet</span>
+                    <span id="status-text" style="font-size: 20px; font-weight: 700;">Live on Base</span>
                 </div>
                 <!-- API Docs Widget -->
                 <div style="background: var(--bg-tertiary); border: 1px solid var(--accent-blue); border-radius: 8px; padding: 10px 16px; cursor: pointer; transition: all 0.2s;" onclick="document.getElementById('api-docs-modal').style.display = 'flex'" onmouseover="this.style.borderColor='var(--accent-teal)'" onmouseout="this.style.borderColor='var(--accent-blue)'">
@@ -1943,5 +1955,186 @@ console.log(result.classification);
             errorDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
     </script>
+
+    <!-- About Modal -->
+    <div id="about-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 2000; align-items: center; justify-content: center;">
+        <div style="background: var(--bg-secondary); border: 1px solid var(--accent-teal); border-radius: 16px; padding: 32px; max-width: 800px; width: 90%; max-height: 90vh; overflow-y: auto; position: relative;">
+            <button onclick="document.getElementById('about-modal').style.display = 'none'" style="position: absolute; top: 16px; right: 16px; background: none; border: none; color: var(--text-secondary); font-size: 24px; cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: all 0.2s;" onmouseover="this.style.background='var(--bg-tertiary)'; this.style.color='var(--text-primary)'" onmouseout="this.style.background='none'; this.style.color='var(--text-secondary)'">×</button>
+
+            <div class="card-header" style="border: none; padding: 0; margin-bottom: 24px;">
+                <h2 class="card-title" style="color: var(--accent-teal);">
+                    📚 About zkML for ERC-8004
+                </h2>
+                <p style="font-size: 14px; color: var(--text-secondary); margin-top: 8px;">
+                    Autonomous verifiable AI agent demonstrating ERC-8004 standard on Base Mainnet
+                </p>
+            </div>
+
+            <!-- What It Is -->
+            <div style="margin-bottom: 32px;">
+                <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 12px; color: var(--text-primary);">
+                    🤖 What Is This?
+                </h3>
+                <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 12px;">
+                    This is an <strong style="color: var(--text-primary);">autonomous AI agent</strong> that monitors crypto news, classifies sentiment using zero-knowledge machine learning (zkML), and triggers DeFi trading decisions on Base Mainnet. It demonstrates the <strong style="color: var(--accent-teal);">ERC-8004 standard</strong> for verifiable AI agents with on-chain proof verification.
+                </p>
+            </div>
+
+            <!-- How It Works -->
+            <div style="margin-bottom: 32px;">
+                <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 12px; color: var(--text-primary);">
+                    ⚙️ How It Works (Autonomous Mode)
+                </h3>
+                <div style="background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        <div style="display: flex; gap: 12px;">
+                            <div style="color: var(--accent-teal); font-size: 20px; min-width: 24px;">1️⃣</div>
+                            <div>
+                                <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">News Fetching</div>
+                                <div style="font-size: 13px; color: var(--text-secondary);">Service polls CoinDesk RSS feed every 5 minutes for latest crypto news</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 12px;">
+                            <div style="color: var(--accent-blue); font-size: 20px; min-width: 24px;">2️⃣</div>
+                            <div>
+                                <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">zkML Classification</div>
+                                <div style="font-size: 13px; color: var(--text-secondary);">Headlines are classified as BULLISH, BEARISH, or NEUTRAL using JOLT-Atlas zkVM with Groth16 proofs</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 12px;">
+                            <div style="color: var(--accent-green); font-size: 20px; min-width: 24px;">3️⃣</div>
+                            <div>
+                                <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">On-Chain Oracle</div>
+                                <div style="font-size: 13px; color: var(--text-secondary);">Classification and proof are posted to NewsOracle smart contract on Base Mainnet</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 12px;">
+                            <div style="color: var(--accent-purple); font-size: 20px; min-width: 24px;">4️⃣</div>
+                            <div>
+                                <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Autonomous Trading</div>
+                                <div style="font-size: 13px; color: var(--text-secondary);">TradingAgent contract reacts to sentiment by executing WETH/USDC trades on Uniswap V3</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paid Testing Feature -->
+            <div style="margin-bottom: 32px;">
+                <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 12px; color: var(--text-primary);">
+                    💳 Paid Testing (x402 Service)
+                </h3>
+                <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 12px;">
+                    Users and AI agents can test custom headlines and see how the autonomous system responds. Submit any headline for just <strong style="color: var(--accent-green);">$0.25 USDC</strong> using the <strong style="color: var(--accent-teal);">HTTP 402 Payment Required</strong> protocol:
+                </p>
+                <ul style="list-style: none; padding: 0; margin: 0;">
+                    <li style="padding: 8px 0; font-size: 13px; color: var(--text-secondary); display: flex; gap: 8px;">
+                        <span style="color: var(--accent-teal);">•</span>
+                        <span>Send $0.25 USDC to the payment recipient on Base Mainnet</span>
+                    </li>
+                    <li style="padding: 8px 0; font-size: 13px; color: var(--text-secondary); display: flex; gap: 8px;">
+                        <span style="color: var(--accent-teal);">•</span>
+                        <span>Submit your custom headline + payment transaction hash</span>
+                    </li>
+                    <li style="padding: 8px 0; font-size: 13px; color: var(--text-secondary); display: flex; gap: 8px;">
+                        <span style="color: var(--accent-teal);">•</span>
+                        <span>Get instant zkML classification with on-chain proof</span>
+                    </li>
+                    <li style="padding: 8px 0; font-size: 13px; color: var(--text-secondary); display: flex; gap: 8px;">
+                        <span style="color: var(--accent-teal);">•</span>
+                        <span>Watch the autonomous trading agent react in real-time</span>
+                    </li>
+                </ul>
+                <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-top: 12px; padding: 12px; background: rgba(77, 226, 207, 0.1); border-radius: 8px; border-left: 3px solid var(--accent-teal);">
+                    <strong style="color: var(--accent-teal);">Try it now!</strong> Use the "x402 Service" widget above or check the "API Docs" for programmatic access.
+                </p>
+            </div>
+
+            <!-- Tech Stack -->
+            <div style="margin-bottom: 32px;">
+                <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 12px; color: var(--text-primary);">
+                    🛠️ Technology Stack
+                </h3>
+                <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                        <div>
+                            <div style="font-weight: 600; color: var(--accent-blue); margin-bottom: 6px; font-size: 13px;">zkML Framework</div>
+                            <div style="font-size: 13px; color: var(--text-secondary);">JOLT-Atlas zkVM<br>Groth16 Proofs</div>
+                        </div>
+                        <div>
+                            <div style="font-weight: 600; color: var(--accent-blue); margin-bottom: 6px; font-size: 13px;">Blockchain</div>
+                            <div style="font-size: 13px; color: var(--text-secondary);">Base Mainnet<br>Chain ID: 8453</div>
+                        </div>
+                        <div>
+                            <div style="font-weight: 600; color: var(--accent-blue); margin-bottom: 6px; font-size: 13px;">Standard</div>
+                            <div style="font-size: 13px; color: var(--text-secondary);">ERC-8004<br>Verifiable AI Agents</div>
+                        </div>
+                        <div>
+                            <div style="font-weight: 600; color: var(--accent-blue); margin-bottom: 6px; font-size: 13px;">Payment</div>
+                            <div style="font-size: 13px; color: var(--text-secondary);">HTTP 402 Protocol<br>USDC on Base</div>
+                        </div>
+                        <div>
+                            <div style="font-weight: 600; color: var(--accent-blue); margin-bottom: 6px; font-size: 13px;">DeFi</div>
+                            <div style="font-size: 13px; color: var(--text-secondary);">Uniswap V3<br>WETH/USDC Pool</div>
+                        </div>
+                        <div>
+                            <div style="font-weight: 600; color: var(--accent-blue); margin-bottom: 6px; font-size: 13px;">Data Source</div>
+                            <div style="font-size: 13px; color: var(--text-secondary);">CoinDesk RSS<br>5-minute polling</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ERC-8004 Explanation -->
+            <div style="margin-bottom: 32px;">
+                <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 12px; color: var(--text-primary);">
+                    📜 What is ERC-8004?
+                </h3>
+                <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 12px;">
+                    <strong style="color: var(--accent-teal);">ERC-8004</strong> is a proposed Ethereum standard for <strong>Verifiable AI Agents</strong>. It enables AI models to prove their computations using zero-knowledge proofs, ensuring:
+                </p>
+                <ul style="list-style: none; padding: 0; margin: 0;">
+                    <li style="padding: 8px 0; font-size: 13px; color: var(--text-secondary); display: flex; gap: 8px;">
+                        <span style="color: var(--accent-green);">✓</span>
+                        <span><strong style="color: var(--text-primary);">Verifiability:</strong> Anyone can verify the AI's decision was computed correctly</span>
+                    </li>
+                    <li style="padding: 8px 0; font-size: 13px; color: var(--text-secondary); display: flex; gap: 8px;">
+                        <span style="color: var(--accent-green);">✓</span>
+                        <span><strong style="color: var(--text-primary);">Privacy:</strong> Model weights and inputs remain private using zero-knowledge cryptography</span>
+                    </li>
+                    <li style="padding: 8px 0; font-size: 13px; color: var(--text-secondary); display: flex; gap: 8px;">
+                        <span style="color: var(--accent-green);">✓</span>
+                        <span><strong style="color: var(--text-primary);">Trust:</strong> On-chain verification enables trustless AI-driven DeFi applications</span>
+                    </li>
+                    <li style="padding: 8px 0; font-size: 13px; color: var(--text-secondary); display: flex; gap: 8px;">
+                        <span style="color: var(--accent-green);">✓</span>
+                        <span><strong style="color: var(--text-primary);">Composability:</strong> AI agents can interact with smart contracts autonomously</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Links & Resources -->
+            <div style="background: linear-gradient(135deg, rgba(91, 140, 255, 0.1), rgba(77, 226, 207, 0.1)); border: 1px solid var(--accent-blue); border-radius: 12px; padding: 20px;">
+                <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 16px; color: var(--text-primary);">
+                    🔗 Learn More
+                </h3>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <a href="https://github.com/hshadab/zkml-erc8004" target="_blank" style="color: var(--accent-blue); text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 8px; transition: all 0.2s;" onmouseover="this.style.color='var(--accent-teal)'" onmouseout="this.style.color='var(--accent-blue)'">
+                        <span>📂</span>
+                        <span>GitHub Repository - Full source code & documentation</span>
+                    </a>
+                    <a href="https://basescan.org/address/0xe92c7aE9E894a8701583a43363676ff878d5b6ed" target="_blank" style="color: var(--accent-blue); text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 8px; transition: all 0.2s;" onmouseover="this.style.color='var(--accent-teal)'" onmouseout="this.style.color='var(--accent-blue)'">
+                        <span>🔍</span>
+                        <span>NewsOracle Contract on BaseScan</span>
+                    </a>
+                    <a href="https://basescan.org/address/0x0D43DC16eFC1322Df3CE2B2852558993918A122B" target="_blank" style="color: var(--accent-blue); text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 8px; transition: all 0.2s;" onmouseover="this.style.color='var(--accent-teal)'" onmouseout="this.style.color='var(--accent-blue)'">
+                        <span>🤝</span>
+                        <span>TradingAgent Contract on BaseScan</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
