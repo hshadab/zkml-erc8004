@@ -78,6 +78,19 @@ app.post('/api/classify', async (req, res) => {
     }
 });
 
+// Proxy news service landing page at /service
+app.get('/service', async (req, res) => {
+    try {
+        const response = await axios.get(`${NEWS_SERVICE_URL}/`);
+        res.setHeader('Content-Type', 'text/html');
+        res.send(response.data);
+    } catch (error) {
+        res.status(error.response?.status || 500).send(
+            '<h1>News Service Unavailable</h1><p>The news service is currently not responding.</p>'
+        );
+    }
+});
+
 // Contract addresses (Base Mainnet deployment)
 const REGISTRY_ADDRESS = process.env.ZKML_VERIFICATION_REGISTRY || '0xb274D9bdbEFD5e645a1E6Df94F4ff62838625230';
 const VALIDATION_REGISTRY_ADDRESS = process.env.VALIDATION_REGISTRY || '0x44fBb986C8705A1de9951131a48D8eBc142c08E6';
