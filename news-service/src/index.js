@@ -122,7 +122,9 @@ class NewsService {
                 logger.info('🤖 Auto-trading enabled: triggering TradingAgent.reactToNews()');
                 const trader = new BaseTrader();
                 await trader.initialize();
-                await trader.executeTrade(result.classificationId);
+                // Wait for evaluation to complete for automatic profitability display
+                await trader.executeTrade(result.classificationId, { waitForEvaluation: true });
+                logger.info('✅ Trade and profitability evaluation complete!');
               } catch (tradeErr) {
                 logger.warn(`⚠️  Auto-trade failed: ${tradeErr.message}`);
               }
@@ -430,17 +432,18 @@ class NewsService {
                 const trader = new BaseTrader();
                 await trader.initialize();
 
-                // Execute trade based on classification
-                const tradeResponse = await trader.executeTrade(oracleResult.classificationId);
+                // Execute trade based on classification with automatic profitability evaluation
+                const tradeResponse = await trader.executeTrade(oracleResult.classificationId, { waitForEvaluation: true });
 
                 if (tradeResponse.success) {
-                  logger.info(`✅ Autonomous trade executed! Tx: ${tradeResponse.txHash}`);
+                  logger.info(`✅ Autonomous trade and profitability evaluation complete! Tx: ${tradeResponse.txHash}`);
                   tradeResult = {
                     triggered: true,
                     txHash: tradeResponse.txHash,
                     action: tradeResponse.action || 'TRADE',
                     basescanUrl: `https://basescan.org/tx/${tradeResponse.txHash}`,
-                    blockNumber: tradeResponse.blockNumber
+                    blockNumber: tradeResponse.blockNumber,
+                    profitabilityEvaluated: true
                   };
                 } else {
                   logger.warn(`⚠️  Trade execution failed: ${tradeResponse.error}`);

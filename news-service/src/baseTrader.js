@@ -143,8 +143,14 @@ class BaseTrader {
 
   /**
    * Execute trade for a classification
+   * @param {string} classificationId - The classification ID to trade on
+   * @param {object} options - Options for trade execution
+   * @param {boolean} options.autoEvaluate - Whether to automatically evaluate profitability (default: true)
+   * @param {boolean} options.waitForEvaluation - Whether to wait for evaluation to complete (default: false)
    */
-  async executeTrade(classificationId) {
+  async executeTrade(classificationId, options = {}) {
+    const { autoEvaluate = true, waitForEvaluation = false } = options;
+
     try {
       logger.info(`\n💱 Executing trade for classification ${classificationId}...`);
 
@@ -167,35 +173,73 @@ class BaseTrader {
       const [ethAfter, usdcAfter] = await this.agent.getPortfolio();
       logger.info(`   Portfolio after: ${ethers.formatEther(ethAfter)} ETH, ${ethers.formatUnits(usdcAfter, 6)} USDC`);
 
-      // Schedule trade profitability evaluation (asynchronous, non-blocking)
-      setTimeout(async () => {
-        try {
-          logger.info(`⏱️  Evaluating trade profitability (10s post-trade)...`);
-          const evalTx = await this.agent.evaluateTradeProfitability(classificationId, {
-            gasLimit: 500000
+      // Auto-evaluate profitability if requested
+      if (autoEvaluate) {
+        if (waitForEvaluation) {
+          // Blocking mode: wait for evaluation to complete
+          await this._evaluateProfitabilityAfterDelay(classificationId);
+        } else {
+          // Non-blocking mode: schedule evaluation asynchronously
+          this._evaluateProfitabilityAfterDelay(classificationId).catch(err => {
+            logger.error(`   ❌ Async evaluation failed: ${err.message}`);
           });
-          logger.info(`   📝 Evaluation TX: ${evalTx.hash}`);
-          logger.info(`   🔗 Explorer: https://basescan.org/tx/${evalTx.hash}`);
-
-          const evalReceipt = await evalTx.wait();
-          logger.info(`   ✅ Trade profitability evaluated! Gas used: ${evalReceipt.gasUsed}`);
-
-          // Get final trade details
-          const tradeDetails = await this.agent.getTradeDetails(classificationId);
-          logger.info(`   💹 Result: ${tradeDetails.isProfitable ? '🟢 Profitable' : '🔴 Unprofitable'}`);
-          logger.info(`   📊 Value before: $${ethers.formatUnits(tradeDetails.portfolioValueBefore, 6)}`);
-          logger.info(`   📊 Value after: $${ethers.formatUnits(tradeDetails.portfolioValueAfter, 6)}`);
-
-        } catch (error) {
-          logger.error(`   ❌ Failed to evaluate trade profitability: ${error.message}`);
         }
-      }, 11000); // Wait 11 seconds (contract requires minimum 10s)
+      }
+
+      return {
+        success: true,
+        txHash: tx.hash,
+        blockNumber: receipt.blockNumber,
+        gasUsed: receipt.gasUsed.toString()
+      };
 
     } catch (error) {
       logger.error(`❌ Trade execution failed: ${error.message}`);
       if (error.data) {
         logger.error(`   Error data: ${error.data}`);
       }
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Helper function to evaluate profitability after contract-required delay
+   * @private
+   */
+  async _evaluateProfitabilityAfterDelay(classificationId) {
+    // Wait 11 seconds (contract requires minimum 10s)
+    logger.info(`   ⏳ Scheduling profitability evaluation in 11 seconds...`);
+    await new Promise(resolve => setTimeout(resolve, 11000));
+
+    try {
+      logger.info(`\n⏱️  Evaluating trade profitability for ${classificationId}...`);
+      const evalTx = await this.agent.evaluateTradeProfitability(classificationId, {
+        gasLimit: 500000
+      });
+      logger.info(`   📝 Evaluation TX: ${evalTx.hash}`);
+      logger.info(`   🔗 Explorer: https://basescan.org/tx/${evalTx.hash}`);
+
+      const evalReceipt = await evalTx.wait();
+      logger.info(`   ✅ Trade profitability evaluated! Gas used: ${evalReceipt.gasUsed}`);
+
+      // Get final trade details
+      const tradeDetails = await this.agent.getTradeDetails(classificationId);
+      logger.info(`   💹 Result: ${tradeDetails.isProfitable ? '🟢 Profitable' : '🔴 Unprofitable'}`);
+      logger.info(`   📊 Value before: $${ethers.formatUnits(tradeDetails.portfolioValueBefore, 6)}`);
+      logger.info(`   📊 Value after: $${ethers.formatUnits(tradeDetails.portfolioValueAfter, 6)}`);
+
+      return {
+        success: true,
+        txHash: evalTx.hash,
+        isProfitable: tradeDetails.isProfitable
+      };
+
+    } catch (error) {
+      logger.error(`   ❌ Failed to evaluate trade profitability: ${error.message}`);
+      throw error;
     }
   }
 
