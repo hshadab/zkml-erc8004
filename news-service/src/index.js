@@ -191,6 +191,103 @@ class NewsService {
     this.app.use(cors());
     this.app.use(express.json());
 
+    // Root route - landing page
+    this.app.get('/', (req, res) => {
+      res.setHeader('Content-Type', 'text/html');
+      res.send(`
+<!DOCTYPE html>
+<html>
+<head>
+  <title>zkML News Oracle - ERC-8004 Service</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 40px auto;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      padding: 40px;
+    }
+    h1 { color: #667eea; margin-bottom: 20px; }
+    h2 { color: #764ba2; margin: 30px 0 15px 0; font-size: 20px; }
+    p { color: #555; line-height: 1.6; margin-bottom: 20px; }
+    .endpoint {
+      background: #f8f9fa;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+    }
+    .endpoint code {
+      background: #e9ecef;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      color: #d63384;
+    }
+    .endpoint strong { color: #667eea; }
+    .status { color: #28a745; font-weight: bold; }
+    a { color: #667eea; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🤖 zkML News Oracle - ERC-8004 Service</h1>
+    <p>Status: <span class="status">✅ Running</span></p>
+    <p>Autonomous zkML-powered news classification oracle on Base Mainnet, demonstrating ERC-8004 verifiable AI agents with HTTP 402 payment integration.</p>
+
+    <h2>📡 Available Endpoints</h2>
+
+    <div class="endpoint">
+      <strong>GET</strong> <code>/status</code><br>
+      Service health check and oracle status
+    </div>
+
+    <div class="endpoint">
+      <strong>POST</strong> <code>/api/demo/classify</code><br>
+      Classify a news headline (demo - no payment required)<br>
+      Body: <code>{ "headline": "Your news headline here" }</code>
+    </div>
+
+    <div class="endpoint">
+      <strong>GET</strong> <code>/api/pricing</code><br>
+      HTTP 402 payment pricing information
+    </div>
+
+    <div class="endpoint">
+      <strong>POST</strong> <code>/api/classify</code><br>
+      Paid classification with autonomous trading (HTTP 402)<br>
+      Body: <code>{ "headline": "...", "paymentTx": "0x..." }</code>
+    </div>
+
+    <h2>🔗 Resources</h2>
+    <p>
+      • <a href="/status">Service Status</a><br>
+      • <a href="/api/pricing">Pricing Info</a><br>
+      • <a href="https://github.com/hshadab/zkml-erc8004" target="_blank">GitHub Repository</a>
+    </p>
+
+    <h2>🛠️ Tech Stack</h2>
+    <p>
+      <strong>zkML:</strong> JOLT-Atlas (zkVM)<br>
+      <strong>Blockchain:</strong> Base Mainnet (Optimism)<br>
+      <strong>Standard:</strong> ERC-8004 Verifiable AI Agents<br>
+      <strong>Payment:</strong> HTTP 402 Payment Required
+    </p>
+  </div>
+</body>
+</html>
+      `);
+    });
+
     // Health check
     this.app.get('/status', async (req, res) => {
       const oracleStatus = this.poster.contract
