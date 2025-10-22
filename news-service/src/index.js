@@ -9,6 +9,12 @@ import { BaseTrader } from './baseTrader.js';
 import { X402Service } from './x402Service.js';
 import { config, validateConfig } from './config.js';
 import { mkdir } from 'fs/promises';
+import { promises as fs } from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Main news service
@@ -178,11 +184,13 @@ class NewsService {
     this.app.listen(config.port, '0.0.0.0', () => {
       logger.info(`🌐 API server listening on http://0.0.0.0:${config.port}`);
       logger.info(`\n📝 Endpoints:`);
-      logger.info(`   GET  /status                - Service status`);
-      logger.info(`   POST /api/demo/classify     - Manual classification (for demos)`);
-      logger.info(`   GET  /api/pricing           - X402 pricing information`);
-      logger.info(`   POST /api/payment-request   - Create X402 payment request (for autonomous agents)`);
-      logger.info(`   POST /api/classify          - X402 paid classification (requires payment)`);
+      logger.info(`   GET  /status                      - Service status`);
+      logger.info(`   GET  /.well-known/ai-service.json - Agent discovery manifest`);
+      logger.info(`   GET  /api/docs                    - API documentation`);
+      logger.info(`   POST /api/demo/classify           - Manual classification (for demos)`);
+      logger.info(`   GET  /api/pricing                 - X402 pricing information`);
+      logger.info(`   POST /api/payment-request         - Create X402 payment request (for autonomous agents)`);
+      logger.info(`   POST /api/classify                - X402 paid classification (requires payment)`);
       logger.info(`\n✨ Service is running! Press Ctrl+C to stop.\n`);
     });
   }
@@ -275,6 +283,8 @@ class NewsService {
     <p>
       • <a href="/status">Service Status</a><br>
       • <a href="/api/pricing">Pricing Info</a><br>
+      • <a href="/api/docs">API Documentation (JSON)</a><br>
+      • <a href="/.well-known/ai-service.json">Service Manifest (for agents)</a><br>
       • <a href="https://github.com/hshadab/zkml-erc8004" target="_blank">GitHub Repository</a>
     </p>
 
@@ -306,6 +316,32 @@ class NewsService {
         },
         oracle: oracleStatus
       });
+    });
+
+    // Agent Discovery: Service manifest (JSON-LD)
+    this.app.get('/.well-known/ai-service.json', async (req, res) => {
+      try {
+        const manifestPath = path.join(__dirname, '../public/ai-service.json');
+        const manifest = await fs.readFile(manifestPath, 'utf8');
+        res.setHeader('Content-Type', 'application/ld+json');
+        res.send(manifest);
+      } catch (error) {
+        logger.error('Error serving service manifest:', error);
+        res.status(500).json({ error: 'Service manifest not available' });
+      }
+    });
+
+    // Agent Discovery: API Documentation
+    this.app.get('/api/docs', async (req, res) => {
+      try {
+        const manifestPath = path.join(__dirname, '../public/ai-service.json');
+        const manifest = await fs.readFile(manifestPath, 'utf8');
+        res.setHeader('Content-Type', 'application/json');
+        res.send(manifest);
+      } catch (error) {
+        logger.error('Error serving API docs:', error);
+        res.status(500).json({ error: 'API documentation not available' });
+      }
     });
 
     // Manual classification endpoint (for demos)

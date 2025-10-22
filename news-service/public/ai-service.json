@@ -1,0 +1,254 @@
+{
+  "@context": "https://schema.org",
+  "@type": "WebAPI",
+  "name": "Verifiable Crypto Sentiment Oracle",
+  "alternateName": "TrustlessDeFi zkML Oracle",
+  "description": "Zero-knowledge machine learning powered sentiment classification for cryptocurrency news with on-chain verification via ERC-8004 and JOLT-Groth16 proofs",
+  "version": "2.0.0",
+  "provider": {
+    "@type": "Organization",
+    "name": "TrustlessDeFi",
+    "url": "https://trustlessdefi.onrender.com",
+    "sameAs": [
+      "https://github.com/hshadab/zkml-erc8004"
+    ]
+  },
+  "offers": {
+    "@type": "Offer",
+    "price": "0.25",
+    "priceCurrency": "USD",
+    "description": "Per classification with zkML proof",
+    "paymentMethod": "X402",
+    "acceptedPaymentToken": {
+      "@type": "Token",
+      "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "symbol": "USDC",
+      "decimals": 6,
+      "network": "Base Mainnet",
+      "chainId": 8453
+    }
+  },
+  "applicationCategory": "Machine Learning API",
+  "applicationSubCategory": "Sentiment Analysis",
+  "operatingSystem": "Web",
+  "url": "https://trustlessdefi.onrender.com",
+  "documentation": "https://trustlessdefi.onrender.com/api/docs",
+  "termsOfService": "https://github.com/hshadab/zkml-erc8004/blob/main/README.md",
+  "capabilities": [
+    "crypto-sentiment-classification",
+    "zkml-proof-generation",
+    "erc8004-verification",
+    "on-chain-verification",
+    "autonomous-agent-integration"
+  ],
+  "keywords": [
+    "zkML",
+    "sentiment analysis",
+    "cryptocurrency",
+    "ONNX",
+    "verifiable AI",
+    "ERC-8004",
+    "JOLT",
+    "Groth16",
+    "Base Mainnet",
+    "X402",
+    "DeFi",
+    "autonomous agents",
+    "oracle"
+  ],
+  "verificationMethod": {
+    "type": "zkML",
+    "protocol": "JOLT-Groth16",
+    "description": "Cryptographic zero-knowledge proof that the ML model executed correctly",
+    "registry": {
+      "address": "0x909fbFbFE9F7Bdb4d1a6e02F2E91d3f367555b07",
+      "standard": "ERC-8004",
+      "network": "Base Mainnet",
+      "chainId": 8453
+    },
+    "verifierContract": {
+      "address": "0x0590f2DFa80BCCc948aDb992737305f2FD01ceba",
+      "type": "NewsClassificationVerifier",
+      "network": "Base Mainnet"
+    }
+  },
+  "performance": {
+    "inferenceTimeMs": {
+      "average": 5,
+      "max": 10
+    },
+    "proofGenerationTimeMs": {
+      "average": 20000,
+      "max": 25000
+    },
+    "accuracy": "100%",
+    "accuracyTestSet": "9 real cryptocurrency headlines",
+    "vocabularySize": 89,
+    "uniqueTokens": 60,
+    "modelSize": "718 bytes"
+  },
+  "constraints": {
+    "maxInputTokens": 60,
+    "maxInputLength": "~300 characters (60 words)",
+    "languages": ["en"],
+    "domain": "cryptocurrency-news",
+    "supportedHeadlines": [
+      "News articles about cryptocurrency",
+      "DeFi protocol announcements",
+      "Market updates",
+      "Regulatory news",
+      "Exchange news",
+      "Blockchain updates"
+    ]
+  },
+  "endpoints": {
+    "base": "https://trustlessdefi.onrender.com/api",
+    "pricing": {
+      "url": "https://trustlessdefi.onrender.com/api/pricing",
+      "method": "GET",
+      "authentication": false,
+      "description": "Get service pricing and payment information"
+    },
+    "paymentRequest": {
+      "url": "https://trustlessdefi.onrender.com/api/payment-request",
+      "method": "POST",
+      "authentication": false,
+      "description": "Create a new payment request with instructions",
+      "requestBody": {
+        "headline": "string (required)"
+      }
+    },
+    "classify": {
+      "url": "https://trustlessdefi.onrender.com/api/classify",
+      "method": "POST",
+      "authentication": true,
+      "authenticationType": "X402 Payment",
+      "description": "Classify headline sentiment with zkML proof",
+      "requestBody": {
+        "headline": "string (required)",
+        "paymentTx": "string (required) - USDC payment transaction hash",
+        "requestId": "string (optional) - from payment request"
+      },
+      "response": {
+        "sentiment": "string (GOOD, BAD, or NEUTRAL)",
+        "confidence": "number (0-100)",
+        "proofHash": "string (0x... zkML proof hash)",
+        "classificationId": "string (on-chain ID)",
+        "verified": "boolean (ERC-8004 verification status)"
+      }
+    },
+    "demo": {
+      "url": "https://trustlessdefi.onrender.com/api/demo/classify",
+      "method": "POST",
+      "authentication": false,
+      "description": "Free demo classification (no payment required)",
+      "requestBody": {
+        "headline": "string (required)"
+      },
+      "rateLimit": "10 per hour"
+    }
+  },
+  "integrationExamples": {
+    "javascript": {
+      "description": "Autonomous agent integration example",
+      "code": "const response = await fetch('https://trustlessdefi.onrender.com/api/classify', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    headline: 'Bitcoin surges past $100k',\n    paymentTx: '0xabc123...' // USDC transfer tx hash\n  })\n});\nconst { sentiment, confidence, proofHash } = await response.json();"
+    },
+    "solidity": {
+      "description": "On-chain verification example",
+      "code": "INewsOracle oracle = INewsOracle(0xe92c7aE9E894a8701583a43363676ff878d5b6ed);\n(uint8 sentiment, uint8 confidence, bytes32 proofHash) = oracle.getLatestClassification();\nif (sentiment == 0 && confidence > 80) {\n  // BAD news with high confidence\n  revert(\"Market conditions unfavorable\");\n}"
+    }
+  },
+  "contracts": {
+    "oracle": {
+      "address": "0xe92c7aE9E894a8701583a43363676ff878d5b6ed",
+      "name": "NewsClassificationOracle",
+      "network": "Base Mainnet",
+      "explorer": "https://basescan.org/address/0xe92c7aE9E894a8701583a43363676ff878d5b6ed"
+    },
+    "verifier": {
+      "address": "0x0590f2DFa80BCCc948aDb992737305f2FD01ceba",
+      "name": "NewsVerifier",
+      "network": "Base Mainnet",
+      "explorer": "https://basescan.org/address/0x0590f2DFa80BCCc948aDb992737305f2FD01ceba"
+    },
+    "registry": {
+      "address": "0x909fbFbFE9F7Bdb4d1a6e02F2E91d3f367555b07",
+      "name": "ZkMLVerificationRegistry",
+      "standard": "ERC-8004",
+      "network": "Base Mainnet",
+      "explorer": "https://basescan.org/address/0x909fbFbFE9F7Bdb4d1a6e02F2E91d3f367555b07"
+    },
+    "tradingAgent": {
+      "address": "0x0D43DC16eFC1322Df3CE2B2852558993918A122B",
+      "name": "TradingAgent",
+      "description": "Autonomous trading agent that uses verified sentiment",
+      "network": "Base Mainnet",
+      "explorer": "https://basescan.org/address/0x0D43DC16eFC1322Df3CE2B2852558993918A122B"
+    }
+  },
+  "useCases": [
+    {
+      "name": "Autonomous Trading Bots",
+      "description": "Trading agents verify sentiment before executing trades",
+      "value": "Avoid losses from trading on false signals"
+    },
+    {
+      "name": "DeFi Risk Management",
+      "description": "Protocols adjust parameters based on verified market sentiment",
+      "value": "Reduce systemic risk during market panic"
+    },
+    {
+      "name": "DAO Governance",
+      "description": "Proposals execute based on cryptographically verified news",
+      "value": "Remove human bias from emergency decisions"
+    },
+    {
+      "name": "Oracle Aggregation",
+      "description": "Combine price + sentiment data for comprehensive market view",
+      "value": "More accurate risk models and predictions"
+    }
+  ],
+  "technicalDetails": {
+    "model": {
+      "type": "ONNX",
+      "architecture": "Embedding → Sum → Threshold",
+      "framework": "PyTorch",
+      "size": "718 bytes",
+      "vocabulary": "89 crypto-specific keywords",
+      "accuracy": "100% on test set (9/9 headlines)",
+      "training": "Expert-designed sentiment weights (not ML-trained)"
+    },
+    "zkML": {
+      "zkvm": "JOLT-Atlas",
+      "proof": "Groth16",
+      "proofSize": "~256 bytes",
+      "verificationGas": "~493k gas",
+      "constraints": "MAX_TENSOR_SIZE = 64 elements"
+    }
+  },
+  "competitiveAdvantages": [
+    "Only verifiable crypto sentiment API with zkML proofs",
+    "100% accuracy on crypto news vs 70% generic sentiment APIs",
+    "Crypto-specialized vocabulary (89 keywords)",
+    "ERC-8004 compliant for standardized discovery",
+    "Fast inference (1-5ms) + reasonable proof time (~20s)",
+    "Affordable pricing ($0.25/classification)",
+    "On-chain verifiable via Base Mainnet",
+    "No API keys, no trust required"
+  ],
+  "roadmap": [
+    "Multi-model marketplace (accept ONNX models from developers)",
+    "Volume discounts for high-frequency traders",
+    "Additional language support (Spanish, Chinese)",
+    "Expanded vocabulary (100+ keywords)",
+    "Real-time WebSocket feed",
+    "Cross-chain deployment (Arbitrum, Optimism)"
+  ],
+  "contact": {
+    "github": "https://github.com/hshadab/zkml-erc8004",
+    "issues": "https://github.com/hshadab/zkml-erc8004/issues"
+  },
+  "license": "MIT",
+  "createdDate": "2025-01-15",
+  "lastModified": "2025-10-22"
+}
