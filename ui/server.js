@@ -18,6 +18,66 @@ app.use((req, res, next) => {
     next();
 });
 
+// News Service API Proxy - Forward requests to internal news service
+const NEWS_SERVICE_URL = 'http://localhost:3000';
+const axios = require('axios');
+
+// Proxy /status endpoint
+app.get('/status', async (req, res) => {
+    try {
+        const response = await axios.get(`${NEWS_SERVICE_URL}/status`);
+        res.json(response.data);
+    } catch (error) {
+        res.status(error.response?.status || 500).json({
+            error: 'News service unavailable',
+            details: error.message
+        });
+    }
+});
+
+// Proxy /api/pricing endpoint (X402)
+app.get('/api/pricing', async (req, res) => {
+    try {
+        const response = await axios.get(`${NEWS_SERVICE_URL}/api/pricing`);
+        res.json(response.data);
+    } catch (error) {
+        res.status(error.response?.status || 500).json({
+            error: 'Pricing service unavailable',
+            details: error.message
+        });
+    }
+});
+
+// Proxy /api/demo/classify endpoint
+app.post('/api/demo/classify', async (req, res) => {
+    try {
+        const response = await axios.post(`${NEWS_SERVICE_URL}/api/demo/classify`, req.body);
+        res.json(response.data);
+    } catch (error) {
+        res.status(error.response?.status || 500).json({
+            error: 'Classification service unavailable',
+            details: error.message,
+            data: error.response?.data
+        });
+    }
+});
+
+// Proxy /api/classify endpoint (X402 paid classification)
+app.post('/api/classify', async (req, res) => {
+    try {
+        const response = await axios.post(`${NEWS_SERVICE_URL}/api/classify`, req.body);
+        res.status(response.status).json(response.data);
+    } catch (error) {
+        // Preserve HTTP 402 status for payment required
+        res.status(error.response?.status || 500).json(
+            error.response?.data || {
+                error: 'Classification service unavailable',
+                details: error.message
+            }
+        );
+    }
+});
+
 // Contract addresses (Base Mainnet deployment)
 const REGISTRY_ADDRESS = process.env.ZKML_VERIFICATION_REGISTRY || '0xb274D9bdbEFD5e645a1E6Df94F4ff62838625230';
 const VALIDATION_REGISTRY_ADDRESS = process.env.VALIDATION_REGISTRY || '0x44fBb986C8705A1de9951131a48D8eBc142c08E6';
