@@ -178,10 +178,11 @@ class NewsService {
     this.app.listen(config.port, '0.0.0.0', () => {
       logger.info(`🌐 API server listening on http://0.0.0.0:${config.port}`);
       logger.info(`\n📝 Endpoints:`);
-      logger.info(`   GET  /status             - Service status`);
-      logger.info(`   POST /api/demo/classify  - Manual classification (for demos)`);
-      logger.info(`   GET  /api/pricing        - X402 pricing information`);
-      logger.info(`   POST /api/classify       - X402 paid classification (requires payment)`);
+      logger.info(`   GET  /status                - Service status`);
+      logger.info(`   POST /api/demo/classify     - Manual classification (for demos)`);
+      logger.info(`   GET  /api/pricing           - X402 pricing information`);
+      logger.info(`   POST /api/payment-request   - Create X402 payment request (for autonomous agents)`);
+      logger.info(`   POST /api/classify          - X402 paid classification (requires payment)`);
       logger.info(`\n✨ Service is running! Press Ctrl+C to stop.\n`);
     });
   }
@@ -364,25 +365,50 @@ class NewsService {
       res.json(this.x402.getPricing());
     });
 
+    // X402 Payment request endpoint - for autonomous agents to get payment instructions
+    this.app.post('/api/payment-request', (req, res) => {
+      const { headline } = req.body;
+
+      if (!headline) {
+        return res.status(400).json({ error: 'Headline required' });
+      }
+
+      const paymentRequest = this.x402.createPaymentRequest(headline);
+
+      // Return with proper X402 headers
+      res.setHeader('WWW-Authenticate', `X402-Payment protocol="x402", service="zkML-Classification"`);
+      res.setHeader('X-Payment-Required', 'true');
+      res.status(402).json({
+        status: 402,
+        message: 'Payment Required',
+        protocol: 'x402',
+        ...paymentRequest
+      });
+    });
+
     // X402 Paid classification endpoint
     this.app.post('/api/classify', async (req, res) => {
       try {
-        const { headline, paymentTx } = req.body;
+        const { headline, paymentTx, requestId } = req.body;
 
         if (!headline) {
           return res.status(400).json({ error: 'Headline required' });
         }
 
         if (!paymentTx) {
-          // Return HTTP 402 Payment Required
+          // Return HTTP 402 Payment Required with proper headers
+          res.setHeader('WWW-Authenticate', `X402-Payment protocol="x402", service="zkML-Classification"`);
+          res.setHeader('X-Payment-Required', 'true');
           return res.status(402).json(this.x402.getPaymentRequiredResponse());
         }
 
-        // Verify payment
-        logger.info(`\n💳 Payment verification requested for headline: "${headline}"`);
-        const paymentResult = await this.x402.verifyPayment(paymentTx);
+        // Verify payment with optional requestId for idempotency
+        logger.info(`\n💳 Payment verification requested for headline: "${headline}"${requestId ? ` (Request: ${requestId})` : ''}`);
+        const paymentResult = await this.x402.verifyPayment(paymentTx, requestId);
 
         if (!paymentResult.valid) {
+          res.setHeader('WWW-Authenticate', `X402-Payment protocol="x402", service="zkML-Classification"`);
+          res.setHeader('X-Payment-Required', 'true');
           return res.status(402).json({
             status: 402,
             message: 'Payment verification failed',

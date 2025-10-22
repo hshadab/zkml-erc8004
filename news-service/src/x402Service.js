@@ -19,6 +19,8 @@ export class X402Service {
     this.usdcAddress = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'; // USDC on Base
     this.priceUsd = '0.25'; // $0.25
     this.minimumPayment = ethers.parseUnits(this.priceUsd, 6); // USDC has 6 decimals
+    this.usedPayments = new Map(); // Track used payments: txHash -> requestId
+    this.pendingRequests = new Map(); // Track pending requests: requestId -> timestamp
   }
 
   /**
@@ -49,14 +51,155 @@ export class X402Service {
   }
 
   /**
+   * Generate a unique request ID for idempotency
+   */
+  generateRequestId() {
+    return `req_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+  }
+
+  /**
+   * Create a new payment request and return payment instructions
+   *
+   * @param {string} headline - The headline to be classified
+   * @returns {Object} Payment request with instructions
+   */
+  createPaymentRequest(headline) {
+    const requestId = this.generateRequestId();
+    const expiresAt = Date.now() + (10 * 60 * 1000); // 10 minutes
+
+    this.pendingRequests.set(requestId, {
+      headline,
+      createdAt: Date.now(),
+      expiresAt
+    });
+
+    // Clean up expired requests (simple cleanup)
+    this.cleanupExpiredRequests();
+
+    return {
+      requestId,
+      expiresAt: new Date(expiresAt).toISOString(),
+      paymentInstructions: this.getPaymentInstructions(requestId)
+    };
+  }
+
+  /**
+   * Get detailed payment instructions for autonomous agents
+   *
+   * @param {string} requestId - Request ID for this payment
+   * @returns {Object} Complete payment instructions
+   */
+  getPaymentInstructions(requestId) {
+    // ERC20 transfer function signature
+    const transferFunction = 'transfer(address,uint256)';
+    const transferSelector = '0xa9059cbb'; // First 4 bytes of keccak256('transfer(address,uint256)')
+
+    // Encode the transfer calldata
+    const abiCoder = ethers.AbiCoder.defaultAbiCoder();
+    const encodedParams = abiCoder.encode(
+      ['address', 'uint256'],
+      [this.recipientAddress, this.minimumPayment]
+    );
+
+    const calldata = transferSelector + encodedParams.slice(2);
+
+    return {
+      method: 'erc20-transfer',
+      protocol: 'x402',
+      network: {
+        name: 'Base Mainnet',
+        chainId: 8453,
+        rpcUrl: 'https://mainnet.base.org'
+      },
+      token: {
+        address: this.usdcAddress,
+        symbol: 'USDC',
+        decimals: 6,
+        name: 'USD Coin'
+      },
+      payment: {
+        recipient: this.recipientAddress,
+        amount: this.minimumPayment.toString(),
+        amountFormatted: `${this.priceUsd} USDC`
+      },
+      transaction: {
+        to: this.usdcAddress,
+        data: calldata,
+        value: '0',
+        gasLimit: '65000' // Typical ERC20 transfer gas limit
+      },
+      instructions: {
+        function: transferFunction,
+        params: {
+          to: this.recipientAddress,
+          amount: this.minimumPayment.toString()
+        }
+      },
+      requestId: requestId,
+      note: 'After broadcasting the transaction, include the tx hash in your API request'
+    };
+  }
+
+  /**
+   * Clean up expired pending requests
+   */
+  cleanupExpiredRequests() {
+    const now = Date.now();
+    for (const [requestId, request] of this.pendingRequests.entries()) {
+      if (request.expiresAt < now) {
+        this.pendingRequests.delete(requestId);
+      }
+    }
+
+    // Also clean up old used payments (older than 24 hours)
+    const oneDayAgo = now - (24 * 60 * 60 * 1000);
+    for (const [txHash, data] of this.usedPayments.entries()) {
+      if (data.timestamp < oneDayAgo) {
+        this.usedPayments.delete(txHash);
+      }
+    }
+  }
+
+  /**
    * Verify payment transaction on Base Mainnet
    *
    * @param {string} txHash - Transaction hash to verify
+   * @param {string} requestId - Optional request ID for idempotency
    * @returns {Object} Verification result
    */
-  async verifyPayment(txHash) {
+  async verifyPayment(txHash, requestId = null) {
     try {
-      logger.info(`Verifying USDC payment: ${txHash}`);
+      logger.info(`Verifying USDC payment: ${txHash}${requestId ? ` for request ${requestId}` : ''}`);
+
+      // Check if this payment was already used
+      if (this.usedPayments.has(txHash)) {
+        const existingRequest = this.usedPayments.get(txHash);
+        return {
+          valid: false,
+          error: `Payment already used for request ${existingRequest.requestId}`,
+          code: 'PAYMENT_ALREADY_USED'
+        };
+      }
+
+      // If request ID provided, verify it exists and hasn't expired
+      if (requestId) {
+        const request = this.pendingRequests.get(requestId);
+        if (!request) {
+          return {
+            valid: false,
+            error: 'Invalid or expired request ID',
+            code: 'INVALID_REQUEST_ID'
+          };
+        }
+        if (request.expiresAt < Date.now()) {
+          this.pendingRequests.delete(requestId);
+          return {
+            valid: false,
+            error: 'Request expired. Please create a new payment request',
+            code: 'REQUEST_EXPIRED'
+          };
+        }
+      }
 
       // Get transaction receipt
       const receipt = await this.provider.getTransactionReceipt(txHash);
@@ -134,6 +277,17 @@ export class X402Service {
       }
 
       logger.info(`Payment verified: $${ethers.formatUnits(transferAmount, 6)} USDC from ${senderAddress}`);
+
+      // Mark payment as used to prevent reuse
+      this.usedPayments.set(txHash, {
+        requestId: requestId || 'legacy',
+        timestamp: Date.now()
+      });
+
+      // Remove from pending requests if request ID was provided
+      if (requestId) {
+        this.pendingRequests.delete(requestId);
+      }
 
       return {
         valid: true,
