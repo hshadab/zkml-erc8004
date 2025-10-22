@@ -588,7 +588,7 @@ async function startServer() {
         agentContract = new ethers.Contract(AGENT_ADDRESS, AGENT_ABI, provider);
 
         // Start HTTP server
-        app.listen(PORT, () => {
+        app.listen(PORT, '0.0.0.0', () => {
             console.log('╔════════════════════════════════════════════════════════╗');
             console.log('║  zkML News Oracle - ERC-8004 Dashboard UI             ║');
             console.log('╚════════════════════════════════════════════════════════╝');

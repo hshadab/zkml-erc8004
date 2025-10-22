@@ -25,17 +25,17 @@ cleanup() {
 
 trap cleanup SIGTERM SIGINT
 
-# Start news service in background
-echo "🚀 Starting News Service (backend API + autonomous oracle)..."
-cd "$PROJECT_ROOT/news-service" && node src/index.js > "$PROJECT_ROOT/logs/news-service.log" 2>&1 &
+# Start news service on internal port
+echo "🚀 Starting News Service (backend API on port 3000)..."
+cd "$PROJECT_ROOT/news-service" && PORT=3000 node src/index.js > "$PROJECT_ROOT/logs/news-service.log" 2>&1 &
 NEWS_PID=$!
 echo "   News Service PID: $NEWS_PID"
 
 # Wait for news service to start
 sleep 3
 
-# Start UI server in background
-echo "🌐 Starting UI Server (frontend dashboard)..."
+# Start UI server on the main PORT (Render will expose this)
+echo "🌐 Starting UI Server (frontend dashboard on main port)..."
 cd "$PROJECT_ROOT/ui" && node server.js > "$PROJECT_ROOT/logs/ui-server.log" 2>&1 &
 UI_PID=$!
 echo "   UI Server PID: $UI_PID"
@@ -47,8 +47,8 @@ echo ""
 echo "✅ Both services started successfully!"
 echo ""
 echo "📊 Service URLs:"
-echo "   Backend API: http://localhost:3000"
-echo "   Frontend UI: http://localhost:3001"
+echo "   Backend API: http://localhost:3000 (internal)"
+echo "   Frontend UI: http://localhost:\${PORT} (public)"
 echo ""
 echo "📝 Logs:"
 echo "   News Service: $PROJECT_ROOT/logs/news-service.log"
