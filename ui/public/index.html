@@ -1327,7 +1327,60 @@
                     </div>
                 </div>
 
-                <!-- Endpoint 2: POST /api/classify -->
+                <!-- Endpoint 2: POST /api/payment-request (for autonomous agents) -->
+                <div style="margin-bottom: 32px;">
+                    <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 12px; color: var(--text-primary);">
+                        <span style="background: var(--accent-blue); color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; margin-right: 8px; font-weight: 700;">POST</span>
+                        /api/payment-request
+                        <span style="background: rgba(77, 226, 207, 0.2); color: var(--accent-teal); padding: 4px 8px; border-radius: 4px; font-size: 10px; margin-left: 8px; font-weight: 600;">AUTONOMOUS AGENTS</span>
+                    </h3>
+                    <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">Request payment instructions with full transaction details (idempotent, 10-min expiry)</p>
+
+                    <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+                        <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 600;">REQUEST BODY</div>
+                        <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 11px; color: var(--text-primary); overflow-x: auto; line-height: 1.6;">{
+  "headline": "Bitcoin ETF approved by SEC"
+}</pre>
+                    </div>
+
+                    <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px;">
+                        <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 600;">RESPONSE (HTTP 402 with transaction details)</div>
+                        <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 10px; color: var(--text-primary); overflow-x: auto; line-height: 1.6;">{
+  "status": 402,
+  "message": "Payment Required",
+  "protocol": "x402",
+  "requestId": "req_1234567890_abc123def",
+  "expiresAt": "2025-10-22T12:45:00.000Z",
+  "paymentInstructions": {
+    "method": "erc20-transfer",
+    "protocol": "x402",
+    "network": {
+      "name": "Base Mainnet",
+      "chainId": 8453,
+      "rpcUrl": "https://mainnet.base.org"
+    },
+    "token": {
+      "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "symbol": "USDC",
+      "decimals": 6
+    },
+    "payment": {
+      "recipient": "0x4E3eD682f723DD133252aae032D32f1Ef7EEafb4",
+      "amount": "250000",
+      "amountFormatted": "0.25 USDC"
+    },
+    "transaction": {
+      "to": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "data": "0xa9059cbb...",
+      "value": "0",
+      "gasLimit": "65000"
+    }
+  }
+}</pre>
+                    </div>
+                </div>
+
+                <!-- Endpoint 3: POST /api/classify -->
                 <div style="margin-bottom: 32px;">
                     <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 12px; color: var(--text-primary);">
                         <span style="background: var(--accent-blue); color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; margin-right: 8px; font-weight: 700;">POST</span>
@@ -1339,7 +1392,8 @@
                         <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 600;">REQUEST BODY</div>
                         <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 11px; color: var(--text-primary); overflow-x: auto; line-height: 1.6;">{
   "headline": "Bitcoin ETF approved by SEC",
-  "paymentTx": "0xYOUR_USDC_TRANSFER_TX_HASH"
+  "paymentTx": "0xYOUR_USDC_TRANSFER_TX_HASH",
+  "requestId": "req_1234567890_abc123def"  // Optional - for idempotency
 }</pre>
                     </div>
 
@@ -1389,13 +1443,23 @@
                 <!-- Payment Flow -->
                 <div style="background: linear-gradient(135deg, rgba(91, 140, 255, 0.1), rgba(77, 226, 207, 0.1)); border: 1px solid var(--accent-teal); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
                     <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--text-primary);">💳 Payment Flow</h3>
-                    <ol style="margin: 0; padding-left: 20px; font-size: 13px; color: var(--text-primary); line-height: 1.8;">
-                        <li>GET <code style="background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px; font-size: 12px;">/api/pricing</code> to get payment details</li>
-                        <li>Send <strong>$0.25 USDC</strong> on <strong>Base Mainnet</strong> to recipient address</li>
-                        <li>Copy your USDC transfer transaction hash</li>
-                        <li>POST to <code style="background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px; font-size: 12px;">/api/classify</code> with headline and tx hash</li>
-                        <li>Receive zkML classification with cryptographic proof</li>
-                    </ol>
+                    <div style="margin-bottom: 16px;">
+                        <strong style="color: var(--accent-teal);">🤖 For Autonomous Agents:</strong>
+                        <ol style="margin: 8px 0 0 0; padding-left: 20px; font-size: 13px; color: var(--text-primary); line-height: 1.8;">
+                            <li>POST to <code style="background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px; font-size: 12px;">/api/payment-request</code> with headline → get <strong>requestId</strong> + full transaction details</li>
+                            <li>Construct & broadcast USDC transfer using provided <code style="background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px; font-size: 12px;">transaction.data</code> (includes ERC20 calldata)</li>
+                            <li>POST to <code style="background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px; font-size: 12px;">/api/classify</code> with headline + paymentTx + <strong>requestId</strong> (prevents payment reuse)</li>
+                            <li>Receive zkML classification + proof + autonomous trade execution</li>
+                        </ol>
+                    </div>
+                    <div>
+                        <strong style="color: var(--accent-blue);">👤 Manual Flow:</strong>
+                        <ol style="margin: 8px 0 0 0; padding-left: 20px; font-size: 13px; color: var(--text-primary); line-height: 1.8;">
+                            <li>GET <code style="background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px; font-size: 12px;">/api/pricing</code> to get recipient address</li>
+                            <li>Send <strong>$0.25 USDC</strong> on <strong>Base Mainnet</strong> to recipient</li>
+                            <li>POST to <code style="background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px; font-size: 12px;">/api/classify</code> with headline + paymentTx</li>
+                        </ol>
+                    </div>
                 </div>
 
                 <!-- JavaScript Integration Example -->
