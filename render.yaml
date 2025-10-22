@@ -7,7 +7,7 @@ services:
     plan: starter
     buildCommand: cd news-service && npm install && cd ../ui && npm install
     startCommand: bash start-combined.sh
-    healthCheckPath: /api/health
+    healthCheckPath: /status
     envVars:
       # Blockchain Configuration (Base Mainnet)
       - key: BASE_MAINNET_RPC_URL
