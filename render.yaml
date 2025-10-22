@@ -1,7 +1,7 @@
 services:
   # zkML Combined Service (News Service + UI Frontend)
   - type: web
-    name: zkml-combined-service
+    name: trustlessdefi
     env: node
     region: oregon
     plan: starter
