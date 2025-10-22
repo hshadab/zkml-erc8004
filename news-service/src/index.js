@@ -173,8 +173,8 @@ class NewsService {
     });
 
     // Start API server
-    this.app.listen(config.port, () => {
-      logger.info(`🌐 API server listening on http://localhost:${config.port}`);
+    this.app.listen(config.port, '0.0.0.0', () => {
+      logger.info(`🌐 API server listening on http://0.0.0.0:${config.port}`);
       logger.info(`\n📝 Endpoints:`);
       logger.info(`   GET  /status             - Service status`);
       logger.info(`   POST /api/demo/classify  - Manual classification (for demos)`);
