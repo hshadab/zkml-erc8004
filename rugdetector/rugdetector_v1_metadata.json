@@ -1,0 +1,18 @@
+{
+  "model_name": "Rug Pull Detector v1",
+  "model_file": "rugdetector_v1.onnx",
+  "version": "1.0.0",
+  "input_features": 60,
+  "output_type": "risk_score",
+  "output_range": [
+    0,
+    1
+  ],
+  "metrics": {
+    "test_accuracy": 1.0,
+    "train_samples": 800,
+    "test_samples": 200
+  },
+  "jolt_compatible": true,
+  "created_at": "2025-10-23T13:20:24.897472"
+}
