@@ -79,6 +79,12 @@ services:
       - key: NODE_ENV
         value: production
 
+      # UI Service Configuration
+      - key: NEWS_SERVICE_URL
+        value: http://localhost:3000
+      - key: ALLOWED_ORIGINS
+        value: https://trustlessdefi.onrender.com
+
   # BaseTrader Service (Optional - can run as background worker)
   - type: worker
     name: zkml-base-trader

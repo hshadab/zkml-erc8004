@@ -3,5 +3,9 @@
     "dotenv": "^17.2.3",
     "ethers": "^6.15.0",
     "solc": "^0.8.30"
-  }
+  },
+  "name": "zkml-erc8004-contracts",
+  "version": "1.0.0",
+  "description": "Smart contracts for zkML News Oracle - ERC-8004 Demo",
+  "license": "MIT"
 }

@@ -11,15 +11,22 @@ const PORT = process.env.PORT || 3001;
 app.use(express.json());
 app.use(express.static('public'));
 
-// CORS for development
+// CORS configuration
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',')
+    : ['http://localhost:3001', 'http://localhost:3000'];
+
 app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
+    const origin = req.headers.origin;
+    if (ALLOWED_ORIGINS.includes(origin) || process.env.NODE_ENV === 'development') {
+        res.header('Access-Control-Allow-Origin', origin || '*');
+    }
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
     next();
 });
 
 // News Service API Proxy - Forward requests to internal news service
-const NEWS_SERVICE_URL = 'http://localhost:3000';
+const NEWS_SERVICE_URL = process.env.NEWS_SERVICE_URL || 'http://localhost:3000';
 const axios = require('axios');
 
 // Proxy /status endpoint
@@ -454,7 +461,7 @@ app.get('/api/portfolio', async (req, res) => {
                 wethBalance: formatEther(portfolio[0]),
                 usdcBalance: formatUsdc(portfolio[1]),
                 totalValue: formatUsdc(totalValue),
-                pnl24h: '0.00' // TODO: Calculate from historical data
+                pnl24h: '0.00' // Note: 24h P&L requires historical data tracking
             };
         });
 

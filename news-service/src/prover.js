@@ -3,15 +3,17 @@ import { logger } from './logger.js';
 import { config } from './config.js';
 
 /**
- * JOLT-Atlas proof generation
- * TODO: Integrate actual JOLT-Atlas proof generation
+ * JOLT-Atlas mock proof generation
  *
- * For now, this generates mock proofs.
- * In production, this would:
- * 1. Take feature vector as input
- * 2. Run ONNX model inference
- * 3. Generate JOLT-Atlas proof (~700ms)
- * 4. Return proof hash
+ * This class generates mock proofs for testing without local JOLT circuits.
+ * For real zkML proofs, use JoltOnnxProver and JoltGroth16Wrapper instead.
+ * Set USE_REAL_PROOFS=true in .env to enable full JOLT + Groth16 pipeline.
+ *
+ * Mock proof generation:
+ * 1. Takes feature vector as input
+ * 2. Simulates ONNX model inference timing
+ * 3. Generates deterministic hash (~700ms)
+ * 4. Returns proof hash suitable for testing
  */
 export class JoltProver {
   constructor() {
@@ -28,8 +30,8 @@ export class JoltProver {
     try {
       logger.info('Generating JOLT-Atlas proof...');
 
-      // TODO: Replace with actual JOLT-Atlas integration
-      // For now, generate a deterministic hash based on features
+      // Mock implementation: generates deterministic hash based on features
+      // Real implementation in joltOnnxProver.js
 
       const startTime = Date.now();
 
@@ -60,13 +62,14 @@ export class JoltProver {
   }
 
   /**
-   * Verify proof (for testing)
+   * Verify proof format (mock verification for testing)
    * @param {string} proofHash - Proof hash to verify
-   * @returns {Promise<boolean>} True if valid
+   * @returns {Promise<boolean>} True if valid format
+   * Note: Real verification happens on-chain via Groth16Verifier contract
    */
   async verifyProof(proofHash) {
-    // TODO: Implement actual proof verification
-    // For now, just check format
+    // Mock verification: just checks hash format
+    // Real verification: NewsVerifier.sol calls Groth16Verifier.sol
     return proofHash && proofHash.startsWith('0x') && proofHash.length === 66;
   }
 
