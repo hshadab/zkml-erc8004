@@ -210,9 +210,10 @@ class BaseTrader {
    * @private
    */
   async _evaluateProfitabilityAfterDelay(classificationId) {
-    // Wait 11 seconds (contract requires minimum 10s)
-    logger.info(`   ⏳ Scheduling profitability evaluation in 11 seconds...`);
-    await new Promise(resolve => setTimeout(resolve, 11000));
+    // Wait 60 seconds for market to stabilize (contract requires minimum 10s)
+    // Longer window allows for better price discovery and reduces noise from immediate volatility
+    logger.info(`   ⏳ Scheduling profitability evaluation in 60 seconds...`);
+    await new Promise(resolve => setTimeout(resolve, 60000));
 
     try {
       logger.info(`\n⏱️  Evaluating trade profitability for ${classificationId}...`);

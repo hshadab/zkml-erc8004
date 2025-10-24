@@ -87,17 +87,20 @@ async function evaluatePendingTrade(specificClassificationId = null) {
       process.exit(0);
     }
 
-    // Check if enough time has passed (contract requires 10s minimum)
+    // Check if enough time has passed (contract requires 10s minimum, but we wait 60s for better price discovery)
     const now = Math.floor(Date.now() / 1000);
     const tradeTime = Number(trade.timestamp);
     const elapsed = now - tradeTime;
 
-    console.log(`\n⏱️  Time since trade: ${elapsed}s (minimum required: 10s)`);
+    console.log(`\n⏱️  Time since trade: ${elapsed}s (contract minimum: 10s, recommended: 60s)`);
 
     if (elapsed < 10) {
       const waitTime = 10 - elapsed + 1;
       console.log(`⏳ Waiting ${waitTime} more seconds...`);
       await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
+    } else if (elapsed < 60) {
+      console.log(`⚠️  Trade is ${elapsed}s old. For best results, wait until 60s for market stabilization.`);
+      console.log(`   Proceeding with evaluation anyway...`);
     }
 
     // Evaluate trade profitability
