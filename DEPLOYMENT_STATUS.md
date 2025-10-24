@@ -16,11 +16,13 @@
 
 ### Environment Variables (Render Dashboard)
 ```
-BASE_MAINNET_RPC_URL=https://base-mainnet.g.alchemy.com/v2/sREmjSL1Dq2l7JjyxPXFX
-ORACLE_PRIVATE_KEY=0xdc446842a5892170954efe240d18f3f4abd3e408093d57a3326050935d883952
+BASE_MAINNET_RPC_URL=<your_alchemy_api_url>
+ORACLE_PRIVATE_KEY=<NEVER_COMMIT_THIS_TO_GIT>
 TRADING_AGENT_ADDRESS=0x0D43DC16eFC1322Df3CE2B2852558993918A122B
 NEWS_ORACLE_CONTRACT_ADDRESS=0xe92c7aE9E894a8701583a43363676ff878d5b6ed
 ```
+
+**SECURITY NOTE:** Private keys are stored in Render environment variables ONLY, never in git.
 
 ### Deployment Details
 - **URL**: https://trustlessdefi.onrender.com/

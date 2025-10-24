@@ -36,10 +36,13 @@ broadcast/
 .DS_Store
 Thumbs.db
 
-# Private keys
+# Private keys and sensitive data
 *.pem
 *.key
 privateKey.txt
+.oracle-wallet*.json
+*wallet*.json
+*-NEW.json
 
 # Temporary files
 tmp/
