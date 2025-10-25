@@ -42,6 +42,19 @@ app.get('/status', async (req, res) => {
     }
 });
 
+// Proxy /.well-known/payment endpoint (X402 service discovery)
+app.get('/.well-known/payment', async (req, res) => {
+    try {
+        const response = await axios.get(`${NEWS_SERVICE_URL}/.well-known/payment`);
+        res.json(response.data);
+    } catch (error) {
+        res.status(error.response?.status || 500).json({
+            error: 'Payment discovery service unavailable',
+            details: error.message
+        });
+    }
+});
+
 // Proxy /api/pricing endpoint (X402)
 app.get('/api/pricing', async (req, res) => {
     try {
@@ -50,6 +63,23 @@ app.get('/api/pricing', async (req, res) => {
     } catch (error) {
         res.status(error.response?.status || 500).json({
             error: 'Pricing service unavailable',
+            details: error.message
+        });
+    }
+});
+
+// Proxy /api/payment-request endpoint (X402)
+app.post('/api/payment-request', async (req, res) => {
+    try {
+        const response = await axios.post(`${NEWS_SERVICE_URL}/api/payment-request`, req.body);
+        // Preserve WWW-Authenticate header for HTTP 402
+        if (response.headers['www-authenticate']) {
+            res.setHeader('WWW-Authenticate', response.headers['www-authenticate']);
+        }
+        res.status(response.status).json(response.data);
+    } catch (error) {
+        res.status(error.response?.status || 500).json({
+            error: 'Payment request service unavailable',
             details: error.message
         });
     }
