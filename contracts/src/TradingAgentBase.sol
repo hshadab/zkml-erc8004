@@ -152,19 +152,18 @@ contract TradingAgentBase {
     }
 
     /**
-     * @notice Executes swap using Uniswap V3 SwapRouter
-     * @dev Uses exactInputSingle for single-hop swaps
+     * @notice Executes swap using Uniswap V3 SwapRouter02
+     * @dev Uses exactInputSingle for single-hop swaps (SwapRouter02 does NOT use deadline parameter)
      */
     function _swapV3(address tokenIn, address tokenOut, uint256 amountIn, uint256 amountOutMin) internal returns (uint256) {
         _approveToken(tokenIn, swapRouter, amountIn);
 
-        // Uniswap V3 SwapRouter.exactInputSingle parameters
+        // Uniswap V3 SwapRouter02.exactInputSingle parameters (NO deadline field!)
         bytes memory params = abi.encode(
             tokenIn,              // tokenIn
             tokenOut,             // tokenOut
             poolFee,              // fee
             address(this),        // recipient
-            block.timestamp + 300, // deadline (5 minutes)
             amountIn,             // amountIn
             amountOutMin,         // amountOutMinimum
             0                     // sqrtPriceLimitX96 (0 = no limit)
@@ -172,7 +171,7 @@ contract TradingAgentBase {
 
         (bool success, bytes memory data) = swapRouter.call(
             abi.encodeWithSignature(
-                "exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))",
+                "exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))",
                 params
             )
         );
