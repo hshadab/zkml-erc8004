@@ -14,12 +14,21 @@
 
 ## Incident Details
 
-### Compromised Wallet
+### Compromised Wallets
+
+#### Wallet #1 (First Compromise)
 - **Address:** `0x4E3eD682f723DD133252aae032D32f1Ef7EEafb4`
-- **Private Key:** `0xdc446842a5892170954efe240d18f3f4abd3e408093d57a3326050935d883952` (EXPOSED)
+- **Private Key:** `[REDACTED - was exposed in render.yaml]`
 - **Exposure Date:** October 21, 2025 (Commit: 7d5d61c)
 - **File:** `render.yaml` line 16
 - **Repository:** https://github.com/hshadab/zkml-erc8004 (PUBLIC)
+
+#### Wallet #2 (Second Compromise)
+- **Address:** `0x38187b1671324b8Ac4b2db397E1D7ac391f5ead9`
+- **Private Key:** `[REDACTED - was exposed in markdown documentation files]`
+- **Exposure Date:** October 24, 2025
+- **Files:** `SECURITY_INCIDENT_REPORT.md`, `QUICK_START_NEW_WALLET.md`, `NEW_DEPLOYMENT_ADDRESSES.md`
+- **Root Cause:** Private key included in documentation committed to git
 
 ### How it Happened
 1. Private key was hardcoded in `render.yaml` for Render deployment
@@ -76,21 +85,22 @@ Go to Render Dashboard → trustlessdefi service → Environment
 
 **Update these variables:**
 ```
-ORACLE_PRIVATE_KEY = 0xc7cf100767aac9ba157d7023ac135d54de55e639ba204c711192cf058ce0cb28
+ORACLE_PRIVATE_KEY = [Get from local .oracle-wallet-SECURE-v3.json file]
 ```
 
 **Add for worker service too:**
 ```
-ORACLE_PRIVATE_KEY = 0xc7cf100767aac9ba157d7023ac135d54de55e639ba204c711192cf058ce0cb28
+ORACLE_PRIVATE_KEY = [Get from local .oracle-wallet-SECURE-v3.json file]
 ```
 
-⚠️ **CRITICAL:** Copy the new private key from `.oracle-wallet-NEW.json` file
+⚠️ **CRITICAL:** Copy the new private key from `.oracle-wallet-SECURE-v3.json` file (LOCAL ONLY)
 ⚠️ **DO NOT** commit this file to git - it's already gitignored
+⚠️ **NEVER** include private keys in documentation or commit messages
 
 #### 2. Fund New Oracle Wallet
 Send **0.002-0.005 ETH** (~$7.80-$19.50) to:
 ```
-New Address: 0x38187b1671324b8Ac4b2db397E1D7ac391f5ead9
+New Address: [Check .oracle-wallet-SECURE-v3.json for current address]
 Network: Base Mainnet
 ```
 
@@ -264,20 +274,24 @@ Refer to this incident report and the new wallet file.
 
 ---
 
-## Appendix: New Wallet Details
+## Appendix: Wallet Information
 
-**STORE THIS INFORMATION SECURELY**
+**All wallet details are stored in LOCAL FILES ONLY:**
 
-```
-Address:     0x38187b1671324b8Ac4b2db397E1D7ac391f5ead9
-Private Key: 0xc7cf100767aac9ba157d7023ac135d54de55e639ba204c711192cf058ce0cb28
-Mnemonic:    desk wage caught hazard happy country sense guard episode amused short renew
+- `.oracle-wallet-SECURE-v3.json` (current secure wallet - gitignored)
+- Never commit wallet files to git
+- Never include private keys in documentation
+- Only store in Render environment variables and local password manager
 
-Created:     2025-10-24
-Purpose:     Oracle wallet for zkML-ERC8004 (replacement)
-Old Address: 0x4E3eD682f723DD133252aae032D32f1Ef7EEafb4 (COMPROMISED)
-```
+**Compromised Wallets (DO NOT USE):**
+- Wallet #1: `0x4E3eD682f723DD133252aae032D32f1Ef7EEafb4` (compromised Oct 21, 2025)
+- Wallet #2: `0x38187b1671324b8Ac4b2db397E1D7ac391f5ead9` (compromised Oct 24, 2025)
 
-⚠️ **NEVER COMMIT THIS TO GIT**
+**Current Wallet:**
+- See `.oracle-wallet-SECURE-v3.json` for address and credentials (LOCAL ONLY)
+
+⚠️ **SECURITY RULES:**
+⚠️ **NEVER COMMIT PRIVATE KEYS TO GIT**
+⚠️ **NEVER INCLUDE IN DOCUMENTATION**
 ⚠️ **STORE IN PASSWORD MANAGER**
-⚠️ **BACKUP SECURELY**
+⚠️ **BACKUP SECURELY OFFLINE**

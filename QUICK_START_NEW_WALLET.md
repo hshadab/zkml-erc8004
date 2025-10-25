@@ -8,12 +8,16 @@
 
 Open the file: `.oracle-wallet-NEW.json`
 
+⚠️ **THIS FILE IS OUTDATED - Wallet #2 was compromised on Oct 24, 2025**
+
+**NEW WALLET FILE:** `.oracle-wallet-SECURE-v3.json` (LOCAL ONLY - gitignored)
+
 You'll see:
 ```json
 {
-  "address": "0x38187b1671324b8Ac4b2db397E1D7ac391f5ead9",
-  "privateKey": "0xc7cf100767aac9ba157d7023ac135d54de55e639ba204c711192cf058ce0cb28",
-  "mnemonic": "desk wage caught hazard happy country sense guard episode amused short renew"
+  "address": "[SEE LOCAL FILE]",
+  "privateKey": "[SEE LOCAL FILE - NEVER COMMIT TO GIT]",
+  "mnemonic": "[SEE LOCAL FILE - NEVER COMMIT TO GIT]"
 }
 ```
 
@@ -31,7 +35,7 @@ You'll see:
 3. Click **Environment** tab
 4. Find `ORACLE_PRIVATE_KEY`
 5. Click **Edit**
-6. Paste: `0xc7cf100767aac9ba157d7023ac135d54de55e639ba204c711192cf058ce0cb28`
+6. Paste: `[Get from .oracle-wallet-SECURE-v3.json file]`
 7. Click **Save Changes**
 
 **ALSO update the worker service (zkml-base-trader):**

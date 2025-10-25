@@ -20,11 +20,14 @@
 
 Update these in Render Dashboard → trustlessdefi → Environment:
 
-```bash
-# Oracle Wallet (NEW - already updated)
-ORACLE_PRIVATE_KEY=0xc7cf100767aac9ba157d7023ac135d54de55e639ba204c711192cf058ce0cb28
+⚠️ **WARNING: This deployment is OUTDATED - Wallet was compromised Oct 24, 2025**
+⚠️ **See .oracle-wallet-SECURE-v3.json for current wallet (LOCAL ONLY)**
 
-# Contract Addresses (NEW DEPLOYMENT)
+```bash
+# Oracle Wallet (Get from .oracle-wallet-SECURE-v3.json - NEVER commit to git)
+ORACLE_PRIVATE_KEY=[SEE LOCAL FILE]
+
+# Contract Addresses (OUTDATED - will be redeployed with v3 wallet)
 NEWS_ORACLE_CONTRACT_ADDRESS=0x9f3bE0d8f6FE5472605307eE2bcA54cf796A7436
 NEWS_ORACLE_ADDRESS=0x9f3bE0d8f6FE5472605307eE2bcA54cf796A7436
 VERIFICATION_REGISTRY_ADDRESS=0x6991dce2152D2b24E8D33132F7ce2ed000F9333c
