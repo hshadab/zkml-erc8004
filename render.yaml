@@ -15,25 +15,27 @@ services:
       - key: ORACLE_PRIVATE_KEY
         sync: false
 
-      # Contract Addresses (Base Mainnet)
+      # Contract Addresses (Base Mainnet - Updated 2025-10-25)
       - key: NEWS_ORACLE_CONTRACT_ADDRESS
-        value: 0xe92c7aE9E894a8701583a43363676ff878d5b6ed
+        value: 0xfe47ba256043617f4acaF0c74Af25ba95be61b95
       - key: NEWS_ORACLE_ADDRESS
-        value: 0xe92c7aE9E894a8701583a43363676ff878d5b6ed
+        value: 0xfe47ba256043617f4acaF0c74Af25ba95be61b95
       - key: VERIFICATION_REGISTRY_ADDRESS
-        value: 0x909fbFbFE9F7Bdb4d1a6e02F2E91d3f367555b07
+        value: 0x0D5F44E626E56b928c273460C73bfe724aef977A
       - key: ZKML_VERIFICATION_REGISTRY
-        value: 0x909fbFbFE9F7Bdb4d1a6e02F2E91d3f367555b07
+        value: 0x0D5F44E626E56b928c273460C73bfe724aef977A
       - key: VALIDATION_REGISTRY_ADDRESS
-        value: 0x04C6276830DA145ee465194131B7beC22aa2d0d3
+        value: 0x0f556d976FA29f0BF678e2367F5E99fa1261f93e
       - key: VALIDATION_REGISTRY
-        value: 0x04C6276830DA145ee465194131B7beC22aa2d0d3
+        value: 0x0f556d976FA29f0BF678e2367F5E99fa1261f93e
       - key: TRADING_AGENT_ADDRESS
-        value: 0x0D43DC16eFC1322Df3CE2B2852558993918A122B
+        value: 0xD00058CE887ebE9354b6d7E51812DB69d38805EC
       - key: NEWS_VERIFIER_ADDRESS
-        value: 0x0590f2DFa80BCCc948aDb992737305f2FD01ceba
+        value: 0xb4c9f9fDEBeD2cB8350E9165Dbd319b14e7cE1Af
       - key: GROTH16_VERIFIER
-        value: 0xebE04Fa57C6cb7294DD7B3D16c166c3424092168
+        value: 0x8dEd762207A6493b229Ccd832E1445B51522807e
+      - key: ORACLE_TOKEN_ID
+        value: 1
 
       # Uniswap V3 (Base Mainnet)
       - key: UNISWAP_V3_ROUTER
@@ -94,17 +96,17 @@ services:
     buildCommand: cd news-service && npm install
     startCommand: cd news-service && node src/startBaseTrader.js
     envVars:
-      # Same env vars as news-service
+      # Same env vars as news-service (Updated 2025-10-25)
       - key: BASE_MAINNET_RPC_URL
         sync: false
       - key: ORACLE_PRIVATE_KEY
         sync: false
       - key: NEWS_ORACLE_CONTRACT_ADDRESS
-        value: 0xe92c7aE9E894a8701583a43363676ff878d5b6ed
+        value: 0xfe47ba256043617f4acaF0c74Af25ba95be61b95
       - key: VERIFICATION_REGISTRY_ADDRESS
-        value: 0x909fbFbFE9F7Bdb4d1a6e02F2E91d3f367555b07
+        value: 0x0D5F44E626E56b928c273460C73bfe724aef977A
       - key: TRADING_AGENT_ADDRESS
-        value: 0x0D43DC16eFC1322Df3CE2B2852558993918A122B
+        value: 0xD00058CE887ebE9354b6d7E51812DB69d38805EC
       - key: UNISWAP_V3_ROUTER
         value: 0x2626664c2603336E57B271c5C0b26F421741e481
       - key: WETH_ADDRESS
