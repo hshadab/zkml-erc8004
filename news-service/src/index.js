@@ -418,17 +418,33 @@ class NewsService {
         return res.status(400).json({ error: 'Headline required' });
       }
 
-      const paymentRequest = this.x402.createPaymentRequest(headline);
+      // Check if X402 service is properly initialized
+      if (!this.x402.recipientAddress) {
+        return res.status(503).json({
+          error: 'Payment service not available',
+          message: 'X402 payment service is not properly initialized. Please contact administrator.'
+        });
+      }
 
-      // Return with proper X402 headers
-      res.setHeader('WWW-Authenticate', `X402-Payment protocol="x402", service="zkML-Classification"`);
-      res.setHeader('X-Payment-Required', 'true');
-      res.status(402).json({
-        status: 402,
-        message: 'Payment Required',
-        protocol: 'x402',
-        ...paymentRequest
-      });
+      try {
+        const paymentRequest = this.x402.createPaymentRequest(headline);
+
+        // Return with proper X402 headers
+        res.setHeader('WWW-Authenticate', `X402-Payment protocol="x402", service="zkML-Classification"`);
+        res.setHeader('X-Payment-Required', 'true');
+        res.status(402).json({
+          status: 402,
+          message: 'Payment Required',
+          protocol: 'x402',
+          ...paymentRequest
+        });
+      } catch (error) {
+        logger.error('Error creating payment request:', error);
+        res.status(500).json({
+          error: 'Failed to create payment request',
+          details: error.message
+        });
+      }
     });
 
     // X402 Paid classification endpoint
