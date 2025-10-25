@@ -174,6 +174,17 @@ class NewsService {
       await this.processNewsCycle();
     });
 
+    // Schedule periodic pricing updates (every hour)
+    logger.info('⏰ Scheduling dynamic pricing updates every hour\n');
+    cron.schedule('0 * * * *', async () => {
+      try {
+        logger.info('Updating dynamic pricing based on current reputation...');
+        await this.x402.updateDynamicPricing();
+      } catch (error) {
+        logger.error('Error updating dynamic pricing:', error);
+      }
+    });
+
     // Start API server
     this.app.listen(config.port, '0.0.0.0', () => {
       logger.info(`🌐 API server listening on http://0.0.0.0:${config.port}`);

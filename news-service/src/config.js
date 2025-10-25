@@ -11,7 +11,8 @@ export const config = {
   oraclePrivateKey: process.env.ORACLE_PRIVATE_KEY,
   // Prefer Polygon envs; fall back to legacy names if present
   newsOracleAddress: process.env.POLYGON_ORACLE || process.env.NEWS_ORACLE_CONTRACT_ADDRESS,
-  registryAddress: process.env.POLYGON_REGISTRY || process.env.VERIFICATION_REGISTRY_ADDRESS,
+  registryAddress: process.env.POLYGON_REGISTRY || process.env.VERIFICATION_REGISTRY_ADDRESS || process.env.ZKML_VERIFICATION_REGISTRY,
+  oracleTokenId: parseInt(process.env.ORACLE_TOKEN_ID || '1'), // ERC-8004 token ID
 
   // News sources
   coinDeskRssUrl: process.env.COINDESK_RSS_URL || 'https://www.coindesk.com/arc/outboundfeeds/rss/',

@@ -47,6 +47,7 @@ export class OraclePoster {
       // Connect to oracle contract
       const oracleAbi = [
         'function postClassification(string calldata headline, uint8 sentiment, uint8 confidence, bytes32 proofHash) external returns (bytes32)',
+        'function postPaidClassification(string calldata headline, uint8 sentiment, uint8 confidence, bytes32 proofHash, address payer, uint256 paymentAmount, bytes32 paymentTxHash) external returns (bytes32)',
         'function getClassificationCount() external view returns (uint256)',
         'function getLatestClassification() external view returns (tuple(bytes32 id, string headline, uint8 sentiment, uint8 confidence, bytes32 proofHash, uint256 timestamp, uint256 oracleTokenId))',
         'event NewsClassified(bytes32 indexed classificationId, string headline, uint8 sentiment, uint8 confidence, bytes32 proofHash, uint256 timestamp, uint256 indexed oracleTokenId)'
@@ -78,22 +79,45 @@ export class OraclePoster {
    * @param {number} sentiment - 0=BAD, 1=NEUTRAL, 2=GOOD
    * @param {number} confidence - Confidence score (0-100)
    * @param {string} proofHash - JOLT-Atlas proof hash
+   * @param {Object} paymentInfo - Optional payment metadata for X402 integration
+   * @param {string} paymentInfo.payer - Address that paid
+   * @param {string} paymentInfo.amount - USDC amount paid (in USDC, e.g., "0.25")
+   * @param {string} paymentInfo.txHash - Payment transaction hash
    * @returns {Object} Transaction result
    */
-  async postClassification(headline, sentiment, confidence, proofHash) {
+  async postClassification(headline, sentiment, confidence, proofHash, paymentInfo = null) {
     try {
-      logger.info(`Posting classification for: "${headline}"`);
+      const isPaid = paymentInfo && paymentInfo.payer && paymentInfo.amount && paymentInfo.txHash;
+
+      logger.info(`Posting ${isPaid ? 'PAID' : 'FREE'} classification for: "${headline}"`);
       logger.info(`Sentiment: ${['BAD', 'NEUTRAL', 'GOOD'][sentiment]}, Confidence: ${confidence}%`);
+      if (isPaid) {
+        logger.info(`Payment: $${paymentInfo.amount} USDC from ${paymentInfo.payer.substring(0, 10)}...`);
+      }
 
       // Try to estimate gas; if it fails or times out, fall back to static limit
-      let gasLimit = 500000n;
+      let gasLimit = isPaid ? 600000n : 500000n; // Paid classifications need more gas
       try {
-        const estimated = await this.contract.postClassification.estimateGas(
-          headline,
-          sentiment,
-          confidence,
-          proofHash
-        );
+        let estimated;
+        if (isPaid) {
+          const paymentAmountWei = ethers.parseUnits(paymentInfo.amount, 6); // USDC has 6 decimals
+          estimated = await this.contract.postPaidClassification.estimateGas(
+            headline,
+            sentiment,
+            confidence,
+            proofHash,
+            paymentInfo.payer,
+            paymentAmountWei,
+            paymentInfo.txHash
+          );
+        } else {
+          estimated = await this.contract.postClassification.estimateGas(
+            headline,
+            sentiment,
+            confidence,
+            proofHash
+          );
+        }
         gasLimit = estimated * 120n / 100n; // +20%
         logger.info(`Estimated gas: ${estimated.toString()} → using ${gasLimit.toString()}`);
       } catch (e) {
@@ -115,19 +139,39 @@ export class OraclePoster {
             ? BigInt(Math.ceil(Number(fee.maxFeePerGas) * bump))
             : 30_000_000_000n;
 
-          tx = await this.contract.postClassification(
-            headline,
-            sentiment,
-            confidence,
-            proofHash,
-            {
-              gasLimit,
-              type: 2,
-              maxPriorityFeePerGas,
-              maxFeePerGas,
-              nonce
-            }
-          );
+          if (isPaid) {
+            const paymentAmountWei = ethers.parseUnits(paymentInfo.amount, 6); // USDC has 6 decimals
+            tx = await this.contract.postPaidClassification(
+              headline,
+              sentiment,
+              confidence,
+              proofHash,
+              paymentInfo.payer,
+              paymentAmountWei,
+              paymentInfo.txHash,
+              {
+                gasLimit,
+                type: 2,
+                maxPriorityFeePerGas,
+                maxFeePerGas,
+                nonce
+              }
+            );
+          } else {
+            tx = await this.contract.postClassification(
+              headline,
+              sentiment,
+              confidence,
+              proofHash,
+              {
+                gasLimit,
+                type: 2,
+                maxPriorityFeePerGas,
+                maxFeePerGas,
+                nonce
+              }
+            );
+          }
 
           logger.info(`Transaction sent: ${tx.hash}`);
           logger.info('Waiting for confirmation...');
