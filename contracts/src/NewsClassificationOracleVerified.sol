@@ -222,6 +222,56 @@ contract NewsClassificationOracleVerified is INewsOracle {
     }
 
     /**
+     * @notice Post paid classification with payment metadata (X402 integration)
+     * @dev Records payment information in the ERC-8004 registry for reputation bonus
+     * @param headline The news headline
+     * @param sentiment Classification result
+     * @param confidence Confidence score (0-100)
+     * @param proofHash Hash of JOLT-Atlas proof
+     * @param payer Address that paid for this classification
+     * @param paymentAmount Amount paid in USDC (6 decimals)
+     * @param paymentTxHash Transaction hash of the payment
+     * @return classificationId Unique ID for this classification
+     */
+    function postPaidClassification(
+        string calldata headline,
+        Sentiment sentiment,
+        uint8 confidence,
+        bytes32 proofHash,
+        address payer,
+        uint256 paymentAmount,
+        bytes32 paymentTxHash
+    )
+        external
+        onlyOwner
+        onlyAuthorizedOracle
+        returns (bytes32 classificationId)
+    {
+        require(payer != address(0), "Invalid payer address");
+        require(paymentAmount > 0, "Payment amount must be positive");
+        require(paymentTxHash != bytes32(0), "Payment tx hash required");
+
+        // Post the classification first
+        classificationId = this.postClassification(headline, sentiment, confidence, proofHash);
+
+        // Record payment in registry for reputation bonus
+        try verificationRegistry.recordPayment(
+            classificationId,
+            oracleTokenId,
+            payer,
+            paymentAmount,
+            paymentTxHash
+        ) {
+            // Payment recorded successfully
+        } catch {
+            // Payment recording failed, continue without it
+            // This ensures backward compatibility if registry doesn't support payments yet
+        }
+
+        return classificationId;
+    }
+
+    /**
      * @notice Decode packed Groth16 proof
      * @param proof Packed proof bytes (256 bytes total)
      * @return pA Proof point A

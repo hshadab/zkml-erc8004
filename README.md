@@ -27,19 +27,29 @@ The system runs continuously:
 
 ## Contract Addresses (Base Mainnet)
 
+**Latest Deployment: October 25, 2025** ✨
+
 | Contract | Address | Purpose |
 |----------|---------|---------|
-| **Groth16Verifier** | `0xebE04Fa57C6cb7294DD7B3D16c166c3424092168` | Verifies zkSNARK proofs |
-| **NewsVerifier** | `0x0590f2DFa80BCCc948aDb992737305f2FD01ceba` | News classification verifier |
-| **ZkMLVerificationRegistry** | `0x909fbFbFE9F7Bdb4d1a6e02F2E91d3f367555b07` | ERC-8004 verification registry |
-| **ValidationRegistry** | `0x04C6276830DA145ee465194131B7beC22aa2d0d3` | ERC-8004 validation registry |
-| **NewsClassificationOracle** | `0xe92c7aE9E894a8701583a43363676ff878d5b6ed` | Stores classifications |
-| **TradingAgent** | `0x0D43DC16eFC1322Df3CE2B2852558993918A122B` | Autonomous trading agent |
+| **ZkMLVerificationRegistry** | `0x0D5F44E626E56b928c273460C73bfe724aef977A` | ERC-8004 registry with payment tracking |
+| **Groth16Verifier** | `0x8dEd762207A6493b229Ccd832E1445B51522807e` | Verifies zkSNARK proofs |
+| **NewsVerifier** | `0xb4c9f9fDEBeD2cB8350E9165Dbd319b14e7cE1Af` | News classification verifier |
+| **ValidationRegistry** | `0x0f556d976FA29f0BF678e2367F5E99fa1261f93e` | ERC-8004 validation registry |
+| **NewsClassificationOracle** | `0xfe47ba256043617f4acaF0c74Af25ba95be61b95` | Oracle with X402 integration |
+| **TradingAgentBase** | `0xD00058CE887ebE9354b6d7E51812DB69d38805EC` | Autonomous trading agent |
 
+**Oracle Token ID**: `1` (ERC-8004 agent registration)
 **Network**: Base Mainnet
 **Chain ID**: 8453
 **RPC**: Alchemy (free tier: 300M CU/month)
 **Explorer**: https://basescan.org
+
+### 🆕 New Features (ERC-8004 + X402 Integration)
+
+- ✅ **Payment-Verified Reputation**: On-chain USDC payment tracking (+5 bonus reputation)
+- ✅ **Dynamic Pricing**: Reputation-based pricing (5 tiers: $0.15 - $1.00)
+- ✅ **X402 Protocol**: HTTP 402 Payment Required for autonomous agents
+- ✅ **On-Chain Payment Records**: PaymentRecorded events for transparency
 
 ## How It Works - Step by Step
 

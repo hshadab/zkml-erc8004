@@ -7,6 +7,7 @@ import "../src/Groth16Verifier.sol";
 import "../src/NewsVerifier.sol";
 import "../src/NewsClassificationOracleVerified.sol";
 import "../src/TradingAgentEnhanced.sol";
+import "../src/ValidationRegistry.sol";
 
 /**
  * @title DeployComplete
@@ -48,11 +49,18 @@ contract DeployComplete is Script {
         console.log("   NewsVerifier deployed at:", address(newsVerifier));
         console.log("   Function: News classification proof storage\n");
 
+        // Step 3.5: Deploy ValidationRegistry
+        console.log("Step 3.5: Deploying ValidationRegistry...");
+        ValidationRegistry validationRegistry = new ValidationRegistry(address(registry));
+        console.log("   ValidationRegistry deployed at:", address(validationRegistry));
+        console.log("   Function: Validation request tracking\n");
+
         // Step 4: Deploy NewsClassificationOracleVerified
         console.log("Step 4: Deploying NewsClassificationOracleVerified...");
         NewsClassificationOracleVerified oracle = new NewsClassificationOracleVerified(
             address(registry),
-            address(newsVerifier)
+            address(newsVerifier),
+            address(validationRegistry)
         );
         console.log("   Oracle deployed at:", address(oracle));
         console.log("   Features: On-chain verification, reputation integration\n");

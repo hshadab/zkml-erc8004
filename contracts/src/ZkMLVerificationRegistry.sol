@@ -152,7 +152,9 @@ contract ZkMLVerificationRegistry is IERC8004 {
             registeredAt: block.timestamp,
             correctPredictions: 0,
             incorrectPredictions: 0,
-            consecutiveFailures: 0
+            consecutiveFailures: 0,
+            paidClassifications: 0,
+            totalPaymentsReceived: 0
         });
 
         agent.capabilityTypes.push(capabilityType);
@@ -515,24 +517,24 @@ contract ZkMLVerificationRegistry is IERC8004 {
 
     /**
      * @notice Get all token IDs owned by an address
-     * @param owner The owner address
+     * @param tokenOwner The owner address
      * @return tokenIds Array of token IDs
      */
-    function getOwnedTokenIds(address owner) external view returns (uint256[] memory tokenIds) {
-        return _ownerToTokenIds[owner];
+    function getOwnedTokenIds(address tokenOwner) external view returns (uint256[] memory tokenIds) {
+        return _ownerToTokenIds[tokenOwner];
     }
 
     /**
      * @notice Get agent details
      * @param tokenId The agent's token ID
-     * @return owner The agent owner
+     * @return agentOwner The agent owner
      * @return capabilityTypes Array of capability types
      */
     function getAgentInfo(uint256 tokenId)
         external
         view
         agentExists(tokenId)
-        returns (address owner, string[] memory capabilityTypes)
+        returns (address agentOwner, string[] memory capabilityTypes)
     {
         Agent storage agent = _agents[tokenId];
         return (agent.owner, agent.capabilityTypes);

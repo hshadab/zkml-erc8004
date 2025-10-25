@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import "forge-std/Script.sol";
 import "../src/NewsClassificationOracleVerified.sol";
 import "../src/TradingAgentEnhanced.sol";
+import "../src/ValidationRegistry.sol";
 
 /**
  * @title RedeployWithNewRegistry
@@ -32,23 +33,30 @@ contract RedeployWithNewRegistry is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
+        // Deploy ValidationRegistry first
+        console.log("Step 1: Deploying ValidationRegistry...");
+        ValidationRegistry validationRegistry = new ValidationRegistry(NEW_REGISTRY);
+        console.log("   ValidationRegistry deployed at:", address(validationRegistry));
+        console.log("");
+
         // Deploy new Oracle
-        console.log("Step 1: Deploying new NewsClassificationOracleVerified...");
+        console.log("Step 2: Deploying new NewsClassificationOracleVerified...");
         NewsClassificationOracleVerified newOracle = new NewsClassificationOracleVerified(
             NEW_REGISTRY,
-            NEWS_VERIFIER
+            NEWS_VERIFIER,
+            address(validationRegistry)
         );
         console.log("   New Oracle deployed at:", address(newOracle));
         console.log("");
 
         // Set oracle token ID (it's already registered as ID 1)
-        console.log("Step 2: Setting Oracle Token ID...");
+        console.log("Step 3: Setting Oracle Token ID...");
         newOracle.setOracleTokenId(1);
         console.log("   Oracle token ID set to: 1");
         console.log("");
 
         // Deploy new Trading Agent
-        console.log("Step 3: Deploying new TradingAgentEnhanced...");
+        console.log("Step 4: Deploying new TradingAgentEnhanced...");
         TradingAgentEnhanced newAgent = new TradingAgentEnhanced(
             address(newOracle),
             NEW_REGISTRY,

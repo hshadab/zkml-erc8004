@@ -1,0 +1,13 @@
+{
+  "network": "Base Mainnet",
+  "chainId": 8453,
+  "timestamp": "2025-10-25T00:00:00Z",
+  "contracts": {
+    "ZkMLVerificationRegistry": "0x0D5F44E626E56b928c273460C73bfe724aef977A",
+    "Groth16Verifier": "0x8dEd762207A6493b229Ccd832E1445B51522807e",
+    "NewsVerifier": "0xb4c9f9fDEBeD2cB8350E9165Dbd319b14e7cE1Af",
+    "ValidationRegistry": "0x0f556d976FA29f0BF678e2367F5E99fa1261f93e",
+    "NewsClassificationOracle": "0xfe47ba256043617f4acaF0c74Af25ba95be61b95",
+    "TradingAgentBase": "0xD00058CE887ebE9354b6d7E51812DB69d38805EC"
+  }
+}
