@@ -261,14 +261,25 @@ class NewsService {
     </div>
 
     <div class="endpoint">
+      <strong>GET</strong> <code>/.well-known/payment</code><br>
+      X402 service discovery (autonomous agents start here!)
+    </div>
+
+    <div class="endpoint">
       <strong>GET</strong> <code>/api/pricing</code><br>
       HTTP 402 payment pricing information
     </div>
 
     <div class="endpoint">
+      <strong>POST</strong> <code>/api/payment-request</code><br>
+      Get payment instructions for a specific headline<br>
+      Body: <code>{ "headline": "Your news headline" }</code>
+    </div>
+
+    <div class="endpoint">
       <strong>POST</strong> <code>/api/classify</code><br>
       Paid classification with autonomous trading (HTTP 402)<br>
-      Body: <code>{ "headline": "...", "paymentTx": "0x..." }</code>
+      Body: <code>{ "headline": "...", "paymentTx": "0x...", "requestId": "..." }</code>
     </div>
 
     <h2>🔗 Resources</h2>
@@ -289,6 +300,40 @@ class NewsService {
 </body>
 </html>
       `);
+    });
+
+    // X402 Well-Known Discovery Endpoint (RFC 5785)
+    this.app.get('/.well-known/payment', (req, res) => {
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      res.json({
+        protocol: 'x402',
+        version: '1.0',
+        service: 'zkML News Classification Oracle',
+        description: 'Zero-knowledge machine learning sentiment analysis with on-chain verification',
+        endpoints: {
+          pricing: `${baseUrl}/api/pricing`,
+          classify: `${baseUrl}/api/classify`,
+          'payment-request': `${baseUrl}/api/payment-request`,
+          status: `${baseUrl}/status`
+        },
+        payment: {
+          currency: 'USDC',
+          network: 'Base Mainnet',
+          chain_id: 8453,
+          contract: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+          price: 0.25,
+          price_display: '$0.25'
+        },
+        features: [
+          'JOLT-Atlas zkML inference',
+          'Groth16 zero-knowledge proofs',
+          'On-chain verification (ERC-8004)',
+          'Autonomous trading integration',
+          'HTTP 402 Payment Required protocol'
+        ],
+        documentation: `${baseUrl}/`,
+        repository: 'https://github.com/hshadab/zkml-erc8004'
+      });
     });
 
     // Health check
