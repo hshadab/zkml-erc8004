@@ -64,4 +64,20 @@ interface IERC8004 {
         uint256 tokenId,
         string calldata capabilityType
     ) external view returns (bool authorized);
+
+    /**
+     * @notice Record a payment for a classification (X402 integration)
+     * @param classificationId The classification ID
+     * @param oracleTokenId The oracle's token ID
+     * @param payer The address that paid
+     * @param amount The amount paid in USDC (6 decimals)
+     * @param paymentTxHash The payment transaction hash
+     */
+    function recordPayment(
+        bytes32 classificationId,
+        uint256 oracleTokenId,
+        address payer,
+        uint256 amount,
+        bytes32 paymentTxHash
+    ) external;
 }

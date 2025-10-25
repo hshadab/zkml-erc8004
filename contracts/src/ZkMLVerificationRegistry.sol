@@ -17,6 +17,8 @@ contract ZkMLVerificationRegistry is IERC8004 {
         uint256 correctPredictions;
         uint256 incorrectPredictions;
         uint256 consecutiveFailures;
+        uint256 paidClassifications;      // NEW: Count of paid classifications
+        uint256 totalPaymentsReceived;    // NEW: Total USDC received (in wei, 6 decimals)
     }
 
     struct Agent {
@@ -35,6 +37,15 @@ contract ZkMLVerificationRegistry is IERC8004 {
         string reason;
     }
 
+    struct PaymentRecord {
+        bytes32 classificationId;
+        uint256 oracleTokenId;
+        address payer;
+        uint256 amount;          // USDC amount in wei (6 decimals)
+        uint256 timestamp;
+        bytes32 paymentTxHash;
+    }
+
     // State variables
     address public owner;
     uint256 private _nextTokenId = 1;
@@ -42,6 +53,7 @@ contract ZkMLVerificationRegistry is IERC8004 {
     mapping(address => uint256[]) private _ownerToTokenIds;
     mapping(bytes32 => ValidationRecord[]) private _validationHistory;
     mapping(address => bool) public authorizedContracts;  // Contracts authorized to submit proofs
+    mapping(bytes32 => PaymentRecord) private _paymentRecords;  // NEW: Track payments per classification
 
     // Constants
     uint256 public constant INITIAL_REPUTATION = 250;
@@ -53,6 +65,7 @@ contract ZkMLVerificationRegistry is IERC8004 {
     uint256 public constant INCORRECT_PREDICTION_PENALTY = 20;
     uint256 public constant STREAK_BONUS = 50;  // Every 10 correct predictions
     uint256 public constant STREAK_THRESHOLD = 10;
+    uint256 public constant PAID_CLASSIFICATION_BONUS = 5;  // NEW: Bonus for paid classifications
 
     // Events
     event ValidationRecorded(
@@ -71,6 +84,14 @@ contract ZkMLVerificationRegistry is IERC8004 {
     event ContractAuthorized(
         address indexed contractAddress,
         bool authorized
+    );
+
+    event PaymentRecorded(
+        bytes32 indexed classificationId,
+        uint256 indexed oracleTokenId,
+        address indexed payer,
+        uint256 amount,
+        bytes32 paymentTxHash
     );
 
     // Modifiers
@@ -275,7 +296,15 @@ contract ZkMLVerificationRegistry is IERC8004 {
                     "Streak bonus"
                 );
             } else {
-                uint256 newScore = capability.reputationScore + CORRECT_PREDICTION_REWARD;
+                // Base reward for correct prediction
+                uint256 reward = CORRECT_PREDICTION_REWARD;
+
+                // Bonus for paid classifications (shows real market demand)
+                if (capability.paidClassifications > 0) {
+                    reward += PAID_CLASSIFICATION_BONUS;
+                }
+
+                uint256 newScore = capability.reputationScore + reward;
                 if (newScore > MAX_REPUTATION) newScore = MAX_REPUTATION;
                 capability.reputationScore = newScore;
 
@@ -344,6 +373,89 @@ contract ZkMLVerificationRegistry is IERC8004 {
         string calldata capabilityType
     ) external view override agentExists(tokenId) returns (bool authorized) {
         return _agents[tokenId].capabilities[capabilityType].isActive;
+    }
+
+    /**
+     * @notice Record a payment for a classification (X402 integration)
+     * @param classificationId The classification ID
+     * @param oracleTokenId The oracle's token ID
+     * @param payer The address that paid
+     * @param amount The amount paid in USDC (6 decimals)
+     * @param paymentTxHash The payment transaction hash
+     */
+    function recordPayment(
+        bytes32 classificationId,
+        uint256 oracleTokenId,
+        address payer,
+        uint256 amount,
+        bytes32 paymentTxHash
+    ) external agentExists(oracleTokenId) {
+        require(authorizedContracts[msg.sender], "Not authorized to record payments");
+        require(_paymentRecords[classificationId].timestamp == 0, "Payment already recorded");
+
+        string memory capabilityType = "news_classification";
+        AgentCapability storage capability = _agents[oracleTokenId].capabilities[capabilityType];
+
+        // Update payment tracking
+        capability.paidClassifications++;
+        capability.totalPaymentsReceived += amount;
+
+        // Store payment record
+        _paymentRecords[classificationId] = PaymentRecord({
+            classificationId: classificationId,
+            oracleTokenId: oracleTokenId,
+            payer: payer,
+            amount: amount,
+            timestamp: block.timestamp,
+            paymentTxHash: paymentTxHash
+        });
+
+        emit PaymentRecorded(classificationId, oracleTokenId, payer, amount, paymentTxHash);
+    }
+
+    /**
+     * @notice Get payment information for a classification
+     * @param classificationId The classification ID
+     * @return payer The address that paid
+     * @return amount The amount paid
+     * @return timestamp When the payment was recorded
+     * @return paymentTxHash The payment transaction hash
+     */
+    function getPaymentInfo(bytes32 classificationId) external view returns (
+        address payer,
+        uint256 amount,
+        uint256 timestamp,
+        bytes32 paymentTxHash
+    ) {
+        PaymentRecord storage record = _paymentRecords[classificationId];
+        return (record.payer, record.amount, record.timestamp, record.paymentTxHash);
+    }
+
+    /**
+     * @notice Check if a classification was paid for
+     * @param classificationId The classification ID
+     * @return isPaid True if payment was recorded
+     */
+    function isClassificationPaid(bytes32 classificationId) external view returns (bool isPaid) {
+        return _paymentRecords[classificationId].timestamp > 0;
+    }
+
+    /**
+     * @notice Get payment statistics for an oracle
+     * @param tokenId The oracle's token ID
+     * @param capabilityType The capability type
+     * @return paidCount Number of paid classifications
+     * @return totalReceived Total USDC received (6 decimals)
+     */
+    function getPaymentStats(
+        uint256 tokenId,
+        string calldata capabilityType
+    ) external view agentExists(tokenId) returns (
+        uint256 paidCount,
+        uint256 totalReceived
+    ) {
+        AgentCapability storage capability = _agents[tokenId].capabilities[capabilityType];
+        return (capability.paidClassifications, capability.totalPaymentsReceived);
     }
 
     /**

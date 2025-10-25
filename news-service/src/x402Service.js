@@ -16,11 +16,15 @@ export class X402Service {
   constructor() {
     this.provider = null;
     this.recipientAddress = null;
+    this.registryContract = null;
+    this.oracleTokenId = null;
     this.usdcAddress = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'; // USDC on Base
-    this.priceUsd = '0.25'; // $0.25
-    this.minimumPayment = ethers.parseUnits(this.priceUsd, 6); // USDC has 6 decimals
+    this.basePriceUsd = '0.25'; // Base price $0.25
+    this.priceUsd = this.basePriceUsd; // Current dynamic price
+    this.minimumPayment = ethers.parseUnits(this.basePriceUsd, 6); // USDC has 6 decimals
     this.usedPayments = new Map(); // Track used payments: txHash -> requestId
     this.pendingRequests = new Map(); // Track pending requests: requestId -> timestamp
+    this.reputationTier = 'standard'; // Current pricing tier
   }
 
   /**
@@ -28,7 +32,7 @@ export class X402Service {
    */
   async initialize() {
     try {
-      logger.info('Initializing X402 Payment Service...');
+      logger.info('Initializing X402 Payment Service with dynamic pricing...');
 
       // Connect to Base Mainnet
       this.provider = new ethers.JsonRpcProvider(
@@ -39,9 +43,30 @@ export class X402Service {
       const wallet = new ethers.Wallet(config.oraclePrivateKey, this.provider);
       this.recipientAddress = wallet.address;
 
+      // Connect to registry contract for reputation-based pricing
+      if (config.registryAddress) {
+        const registryAbi = [
+          'function getReputationScore(uint256 tokenId, string calldata capabilityType) external view returns (uint256)',
+          'function getPaymentStats(uint256 tokenId, string calldata capabilityType) external view returns (uint256 paidCount, uint256 totalReceived)'
+        ];
+        this.registryContract = new ethers.Contract(
+          config.registryAddress,
+          registryAbi,
+          this.provider
+        );
+      }
+
+      // Get oracle token ID from config or environment
+      this.oracleTokenId = config.oracleTokenId || process.env.ORACLE_TOKEN_ID || 1;
+
+      // Update pricing based on current reputation
+      await this.updateDynamicPricing();
+
       logger.info(`Payment recipient: ${this.recipientAddress}`);
+      logger.info(`Oracle Token ID: ${this.oracleTokenId}`);
+      logger.info(`Reputation tier: ${this.reputationTier}`);
       logger.info(`Service price: $${this.priceUsd} USDC`);
-      logger.info('X402 Payment Service ready\n');
+      logger.info('X402 Payment Service ready with dynamic pricing\n');
 
       return true;
     } catch (error) {
@@ -309,6 +334,79 @@ export class X402Service {
   }
 
   /**
+   * Update dynamic pricing based on oracle reputation (ERC-8004 integration)
+   */
+  async updateDynamicPricing() {
+    try {
+      if (!this.registryContract || !this.oracleTokenId) {
+        logger.info('Registry contract not available, using base pricing');
+        return;
+      }
+
+      // Get current reputation score
+      const reputation = await this.registryContract.getReputationScore(
+        this.oracleTokenId,
+        'news_classification'
+      );
+      const repScore = Number(reputation);
+
+      // Get payment statistics
+      let paidCount = 0;
+      let totalReceived = 0;
+      try {
+        const [paid, received] = await this.registryContract.getPaymentStats(
+          this.oracleTokenId,
+          'news_classification'
+        );
+        paidCount = Number(paid);
+        totalReceived = Number(received);
+      } catch (e) {
+        // Payment stats might not be available yet
+      }
+
+      // Calculate dynamic pricing based on reputation tiers
+      let price = this.basePriceUsd;
+      let tier = 'standard';
+
+      if (repScore >= 900) {
+        // Premium oracle: 40% discount
+        price = '0.15';
+        tier = 'premium';
+      } else if (repScore >= 700) {
+        // Proven oracle: 20% discount
+        price = '0.20';
+        tier = 'proven';
+      } else if (repScore >= 500) {
+        // Standard oracle: base price
+        price = '0.25';
+        tier = 'standard';
+      } else if (repScore >= 300) {
+        // Developing oracle: 60% markup
+        price = '0.40';
+        tier = 'developing';
+      } else {
+        // Unproven oracle: 300% markup
+        price = '1.00';
+        tier = 'unproven';
+      }
+
+      this.priceUsd = price;
+      this.minimumPayment = ethers.parseUnits(price, 6);
+      this.reputationTier = tier;
+
+      logger.info(`Dynamic pricing updated: Reputation=${repScore}, Tier=${tier}, Price=$${price}`);
+      if (paidCount > 0) {
+        logger.info(`Payment history: ${paidCount} paid classifications, $${ethers.formatUnits(totalReceived, 6)} total USDC`);
+      }
+    } catch (error) {
+      logger.error('Failed to update dynamic pricing:', error);
+      // Fall back to base pricing on error
+      this.priceUsd = this.basePriceUsd;
+      this.minimumPayment = ethers.parseUnits(this.basePriceUsd, 6);
+    }
+  }
+
+  /**
    * Get service pricing information
    */
   getPricing() {
@@ -320,11 +418,14 @@ export class X402Service {
       description: 'Get sentiment classification with zero-knowledge proof for any news headline',
       recipient: this.recipientAddress,
       network: 'Base Mainnet (Chain ID: 8453)',
+      reputationTier: this.reputationTier, // NEW: Show current tier
+      oracleTokenId: this.oracleTokenId,   // NEW: Show oracle identity
       features: [
         'JOLT-Atlas zkML inference',
         'Groth16 proof generation',
         'On-chain verifiable results',
-        'Instant delivery'
+        'Instant delivery',
+        'Reputation-based dynamic pricing' // NEW
       ]
     };
   }

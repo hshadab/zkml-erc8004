@@ -197,6 +197,8 @@ class NewsService {
     // X402 Well-Known Discovery Endpoint (RFC 5785) - MUST come before root route
     this.app.get('/.well-known/payment', (req, res) => {
       const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const pricingInfo = this.x402.getPricing();
+
       res.json({
         protocol: 'x402',
         version: '1.0',
@@ -213,15 +215,30 @@ class NewsService {
           network: 'Base Mainnet',
           chain_id: 8453,
           contract: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
-          price: 0.25,
-          price_display: '$0.25'
+          price: parseFloat(this.x402.priceUsd),
+          price_display: `$${this.x402.priceUsd}`,
+          dynamic_pricing: true, // NEW: Indicate dynamic pricing is enabled
+          reputation_tier: this.x402.reputationTier // NEW: Show current tier
+        },
+        oracle: {
+          token_id: this.x402.oracleTokenId,
+          erc8004_registry: config.registryAddress,
+          reputation_tier: this.x402.reputationTier,
+          pricing_tiers: {
+            premium: { min_reputation: 900, price: '$0.15', discount: '40%' },
+            proven: { min_reputation: 700, price: '$0.20', discount: '20%' },
+            standard: { min_reputation: 500, price: '$0.25', discount: '0%' },
+            developing: { min_reputation: 300, price: '$0.40', markup: '60%' },
+            unproven: { min_reputation: 0, price: '$1.00', markup: '300%' }
+          }
         },
         features: [
           'JOLT-Atlas zkML inference',
           'Groth16 zero-knowledge proofs',
           'On-chain verification (ERC-8004)',
           'Autonomous trading integration',
-          'HTTP 402 Payment Required protocol'
+          'HTTP 402 Payment Required protocol',
+          'Reputation-based dynamic pricing' // NEW
         ],
         documentation: `${baseUrl}/`,
         repository: 'https://github.com/hshadab/zkml-erc8004'

@@ -81,6 +81,53 @@ contract NewsClassificationOracle is INewsOracle {
         onlyAuthorizedOracle
         returns (bytes32 classificationId)
     {
+        return _postClassificationInternal(headline, sentiment, confidence, proofHash, address(0), 0, bytes32(0));
+    }
+
+    /**
+     * @notice Post a paid news classification (X402 integration)
+     * @param headline The news headline
+     * @param sentiment Classification result
+     * @param confidence Confidence score (0-100)
+     * @param proofHash Hash of JOLT-Atlas proof
+     * @param payer Address that paid for the classification
+     * @param paymentAmount Amount paid in USDC (6 decimals)
+     * @param paymentTxHash Payment transaction hash
+     * @return classificationId Unique ID for this classification
+     */
+    function postPaidClassification(
+        string calldata headline,
+        Sentiment sentiment,
+        uint8 confidence,
+        bytes32 proofHash,
+        address payer,
+        uint256 paymentAmount,
+        bytes32 paymentTxHash
+    )
+        external
+        onlyOwner
+        onlyAuthorizedOracle
+        returns (bytes32 classificationId)
+    {
+        require(payer != address(0), "Invalid payer address");
+        require(paymentAmount > 0, "Payment amount must be positive");
+        require(paymentTxHash != bytes32(0), "Payment tx hash required");
+
+        return _postClassificationInternal(headline, sentiment, confidence, proofHash, payer, paymentAmount, paymentTxHash);
+    }
+
+    /**
+     * @notice Internal function to post classification
+     */
+    function _postClassificationInternal(
+        string calldata headline,
+        Sentiment sentiment,
+        uint8 confidence,
+        bytes32 proofHash,
+        address payer,
+        uint256 paymentAmount,
+        bytes32 paymentTxHash
+    ) internal returns (bytes32 classificationId) {
         require(confidence >= MIN_CONFIDENCE, "Confidence too low");
         require(bytes(headline).length > 0, "Headline cannot be empty");
         require(proofHash != bytes32(0), "Proof hash required");
@@ -110,6 +157,22 @@ contract NewsClassificationOracle is INewsOracle {
 
         // Submit proof to registry
         verificationRegistry.submitProof(oracleTokenId, proofHash);
+
+        // Record payment if this was a paid classification (X402 integration)
+        if (payer != address(0)) {
+            try verificationRegistry.recordPayment(
+                classificationId,
+                oracleTokenId,
+                payer,
+                paymentAmount,
+                paymentTxHash
+            ) {
+                // Payment recorded successfully
+            } catch {
+                // Payment recording failed, continue without it
+                // This ensures backward compatibility if registry doesn't support payments yet
+            }
+        }
 
         // Request validation from ValidationRegistry (ERC-8004)
         if (address(validationRegistry) != address(0)) {
