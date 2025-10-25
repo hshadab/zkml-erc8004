@@ -120,8 +120,16 @@ class NewsService {
             if (process.env.ENABLE_AUTO_TRADE === 'true' && result.classificationId) {
               try {
                 logger.info('🤖 Auto-trading enabled: triggering TradingAgent.reactToNews()');
-                const trader = new BaseTrader();
-                await trader.initialize();
+                const trader = new BaseTrader({
+                  rpcUrl: process.env.BASE_MAINNET_RPC_URL,
+                  privateKey: process.env.ORACLE_PRIVATE_KEY,
+                  oracleAddress: process.env.NEWS_ORACLE_ADDRESS,
+                  agentAddress: process.env.TRADING_AGENT_ADDRESS,
+                  registryAddress: process.env.VERIFICATION_REGISTRY_ADDRESS,
+                  uniswapRouter: process.env.UNISWAP_V3_ROUTER,
+                  wethAddress: process.env.WETH_ADDRESS,
+                  usdcAddress: process.env.USDC_ADDRESS
+                });
                 // Wait for evaluation to complete for automatic profitability display
                 await trader.executeTrade(result.classificationId, { waitForEvaluation: true });
                 logger.info('✅ Trade and profitability evaluation complete!');
