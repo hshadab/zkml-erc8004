@@ -26,7 +26,7 @@ async function testTrade() {
     });
 
     // Use the first classification ID
-    const classificationId = '0x401915f62f78b8da97a10fadf6f708f7e92eec05e5703db89042533010fde981';
+    const classificationId = '0x48c2da7b256463c523a343d88e489cfcf471d4a7264109c670d356d6095df645';
 
     logger.info(`Executing trade for classification: ${classificationId}`);
     await trader.executeTrade(classificationId, { waitForEvaluation: true });

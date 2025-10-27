@@ -158,24 +158,16 @@ contract TradingAgentBase {
     function _swapV3(address tokenIn, address tokenOut, uint256 amountIn, uint256 amountOutMin) internal returns (uint256) {
         _approveToken(tokenIn, swapRouter, amountIn);
 
-        // Uniswap V3 SwapRouter02.exactInputSingle parameters (NO deadline field!)
-        bytes memory params = abi.encode(
-            tokenIn,              // tokenIn
-            tokenOut,             // tokenOut
-            poolFee,              // fee
-            address(this),        // recipient
-            amountIn,             // amountIn
-            amountOutMin,         // amountOutMinimum
-            0                     // sqrtPriceLimitX96 (0 = no limit)
+        // Manual ABI encoding for exactInputSingle with struct parameter
+        // Function selector: bytes4(keccak256("exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))"))
+        bytes4 selector = 0x04e45aaf; // exactInputSingle selector
+
+        bytes memory callData = abi.encodePacked(
+            selector,
+            abi.encode(tokenIn, tokenOut, poolFee, address(this), amountIn, amountOutMin, uint160(0))
         );
 
-        (bool success, bytes memory data) = swapRouter.call(
-            abi.encodeWithSignature(
-                "exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))",
-                params
-            )
-        );
-
+        (bool success, bytes memory data) = swapRouter.call(callData);
         require(success, "Swap failed");
         uint256 amountOut = abi.decode(data, (uint256));
         return amountOut;
@@ -275,8 +267,28 @@ contract TradingAgentBase {
     }
 
     function _approveToken(address token, address spender, uint256 amount) internal {
-        (bool success, ) = token.call(abi.encodeWithSignature("approve(address,uint256)", spender, amount));
-        require(success, "Approve failed");
+        // First try to approve the amount
+        (bool success, bytes memory returndata) = token.call(
+            abi.encodeWithSelector(0x095ea7b3, spender, amount) // approve(address,uint256)
+        );
+
+        // Check if the call was successful and returned true (or no data)
+        bool approved = success && (returndata.length == 0 || (returndata.length >= 32 && abi.decode(returndata, (bool))));
+
+        // If approval failed and we're trying to approve a non-zero amount,
+        // some tokens (like USDT) require setting to 0 first
+        if (!approved && amount > 0) {
+            (success, returndata) = token.call(
+                abi.encodeWithSelector(0x095ea7b3, spender, 0)
+            );
+            require(success && (returndata.length == 0 || (returndata.length >= 32 && abi.decode(returndata, (bool)))), "Approve to 0 failed");
+
+            (success, returndata) = token.call(
+                abi.encodeWithSelector(0x095ea7b3, spender, amount)
+            );
+        }
+
+        require(success && (returndata.length == 0 || (returndata.length >= 32 && abi.decode(returndata, (bool)))), "Approve failed");
     }
 
     receive() external payable {}
