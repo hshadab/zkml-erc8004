@@ -5,69 +5,133 @@ import "./interfaces/IERC8004.sol";
 
 /**
  * @title ZkMLVerificationRegistry
- * @notice Enhanced ERC-8004 implementation with dynamic reputation mechanics
- * @dev Tracks agent registrations, capabilities, reputation, and validation history
+ * @notice Enhanced ERC-8004 implementation with dynamic reputation mechanics and X402 payment tracking
+ * @dev Tracks agent registrations, capabilities, reputation, validation history, and micropayments
+ *
+ * Features:
+ * - Agent registration with capability-based authorization
+ * - Dynamic reputation system with streak bonuses and progressive penalties
+ * - Validation history tracking for audit trails
+ * - X402 payment integration for paid classifications
+ * - Access control for validation recording
+ *
+ * Security:
+ * - Only authorized validators can record validations
+ * - Only authorized contracts can record payments
+ * - Owner-controlled validator authorization
+ *
+ * @custom:security-contact security@example.com
  */
 contract ZkMLVerificationRegistry is IERC8004 {
-    struct AgentCapability {
-        bool isActive;
-        uint256 reputationScore;  // 0-1000
-        uint256 proofsSubmitted;
-        uint256 registeredAt;
-        uint256 correctPredictions;
-        uint256 incorrectPredictions;
-        uint256 consecutiveFailures;
-        uint256 paidClassifications;      // NEW: Count of paid classifications
-        uint256 totalPaymentsReceived;    // NEW: Total USDC received (in wei, 6 decimals)
-    }
+    // ============ Constants ============
 
-    struct Agent {
-        address owner;
-        uint256 tokenId;
-        mapping(string => AgentCapability) capabilities;
-        string[] capabilityTypes;
-    }
-
-    struct ValidationRecord {
-        bytes32 classificationId;
-        uint256 oracleTokenId;
-        bool wasCorrect;
-        uint256 timestamp;
-        address validator;
-        string reason;
-    }
-
-    struct PaymentRecord {
-        bytes32 classificationId;
-        uint256 oracleTokenId;
-        address payer;
-        uint256 amount;          // USDC amount in wei (6 decimals)
-        uint256 timestamp;
-        bytes32 paymentTxHash;
-    }
-
-    // State variables
-    address public owner;
-    uint256 private _nextTokenId = 1;
-    mapping(uint256 => Agent) private _agents;
-    mapping(address => uint256[]) private _ownerToTokenIds;
-    mapping(bytes32 => ValidationRecord[]) private _validationHistory;
-    mapping(address => bool) public authorizedContracts;  // Contracts authorized to submit proofs
-    mapping(bytes32 => PaymentRecord) private _paymentRecords;  // NEW: Track payments per classification
-
-    // Constants
+    /// @notice Initial reputation score for newly registered agents
     uint256 public constant INITIAL_REPUTATION = 250;
+
+    /// @notice Maximum reputation score achievable
     uint256 public constant MAX_REPUTATION = 1000;
+
+    /// @notice Minimum reputation score (floor)
     uint256 public constant MIN_REPUTATION = 0;
 
-    // Reputation adjustments
+    /// @notice Reputation reward for each correct prediction
     uint256 public constant CORRECT_PREDICTION_REWARD = 10;
-    uint256 public constant INCORRECT_PREDICTION_PENALTY = 20;
-    uint256 public constant STREAK_BONUS = 50;  // Every 10 correct predictions
-    uint256 public constant STREAK_THRESHOLD = 10;
-    uint256 public constant PAID_CLASSIFICATION_BONUS = 5;  // NEW: Bonus for paid classifications
 
-    // Events
+    /// @notice Base penalty for incorrect predictions
+    uint256 public constant INCORRECT_PREDICTION_PENALTY = 20;
+
+    /// @notice Bonus reward for reaching streak threshold
+    uint256 public constant STREAK_BONUS = 50;
+
+    /// @notice Number of correct predictions needed for streak bonus
+    uint256 public constant STREAK_THRESHOLD = 10;
+
+    /// @notice Additional reputation bonus for paid classifications
+    uint256 public constant PAID_CLASSIFICATION_BONUS = 5;
+
+    /// @notice Consecutive failures threshold for warning
+    uint256 public constant CONSECUTIVE_FAILURE_WARNING_THRESHOLD = 5;
+
+    // ============ Structs ============
+
+    /// @notice Capability-specific statistics for an agent
+    /// @dev Tracks performance metrics and payment info for each capability
+    struct AgentCapability {
+        bool isActive;                    // Whether this capability is active
+        uint256 reputationScore;          // Current reputation (0-1000)
+        uint256 proofsSubmitted;          // Total proofs submitted
+        uint256 registeredAt;             // Registration timestamp
+        uint256 correctPredictions;       // Count of correct predictions
+        uint256 incorrectPredictions;     // Count of incorrect predictions
+        uint256 consecutiveFailures;      // Current failure streak
+        uint256 paidClassifications;      // Count of paid classifications (X402)
+        uint256 totalPaymentsReceived;    // Total USDC received (6 decimals)
+    }
+
+    /// @notice Complete agent record
+    /// @dev Stores agent owner, token ID, and all capabilities
+    struct Agent {
+        address owner;                                    // Agent owner address
+        uint256 tokenId;                                  // ERC-8004 token ID
+        mapping(string => AgentCapability) capabilities;  // Capability name => stats
+        string[] capabilityTypes;                         // List of capability names
+    }
+
+    /// @notice Record of a validation event
+    /// @dev Immutable audit trail for each classification validation
+    struct ValidationRecord {
+        bytes32 classificationId;  // Classification being validated
+        uint256 oracleTokenId;     // Oracle's token ID
+        bool wasCorrect;           // Whether prediction was correct
+        uint256 timestamp;         // Validation timestamp
+        address validator;         // Validator address
+        string reason;             // Validation reason/notes
+    }
+
+    /// @notice Record of an X402 payment
+    /// @dev Tracks micropayments for classification requests
+    struct PaymentRecord {
+        bytes32 classificationId;  // Classification ID
+        uint256 oracleTokenId;     // Oracle's token ID
+        address payer;             // Payment sender
+        uint256 amount;            // USDC amount (6 decimals)
+        uint256 timestamp;         // Payment timestamp
+        bytes32 paymentTxHash;     // Payment transaction hash
+    }
+
+    // ============ State Variables ============
+
+    /// @notice Contract owner with admin privileges
+    address public owner;
+
+    /// @notice Next token ID to be assigned
+    uint256 private _nextTokenId = 1;
+
+    /// @notice Mapping of token ID to agent data
+    mapping(uint256 => Agent) private _agents;
+
+    /// @notice Mapping of owner address to their token IDs
+    mapping(address => uint256[]) private _ownerToTokenIds;
+
+    /// @notice Mapping of classification ID to validation history
+    mapping(bytes32 => ValidationRecord[]) private _validationHistory;
+
+    /// @notice Addresses authorized to submit proofs
+    mapping(address => bool) public authorizedContracts;
+
+    /// @notice Addresses authorized to record validations
+    mapping(address => bool) public authorizedValidators;
+
+    /// @notice Mapping of classification ID to payment record
+    mapping(bytes32 => PaymentRecord) private _paymentRecords;
+
+    // ============ Events ============
+
+    /// @notice Emitted when a classification validation is recorded
+    /// @param classificationId Classification being validated
+    /// @param oracleTokenId Oracle's token ID
+    /// @param wasCorrect Whether the prediction was correct
+    /// @param validator Address that recorded the validation
     event ValidationRecorded(
         bytes32 indexed classificationId,
         uint256 indexed oracleTokenId,
@@ -75,17 +139,32 @@ contract ZkMLVerificationRegistry is IERC8004 {
         address indexed validator
     );
 
+    /// @notice Emitted when an agent reaches consecutive failure threshold
+    /// @param tokenId Agent's token ID
+    /// @param capabilityType Capability with failures
+    /// @param consecutiveFailures Number of consecutive failures
     event ConsecutiveFailureWarning(
         uint256 indexed tokenId,
         string capabilityType,
         uint256 consecutiveFailures
     );
 
-    event ContractAuthorized(
-        address indexed contractAddress,
-        bool authorized
-    );
+    /// @notice Emitted when a contract's authorization status changes
+    /// @param contractAddress Address being authorized/deauthorized
+    /// @param authorized New authorization status
+    event ContractAuthorized(address indexed contractAddress, bool authorized);
 
+    /// @notice Emitted when a validator's authorization status changes
+    /// @param validator Address being authorized/deauthorized
+    /// @param authorized New authorization status
+    event ValidatorAuthorized(address indexed validator, bool authorized);
+
+    /// @notice Emitted when an X402 payment is recorded
+    /// @param classificationId Classification ID
+    /// @param oracleTokenId Oracle's token ID
+    /// @param payer Payment sender
+    /// @param amount USDC amount paid (6 decimals)
+    /// @param paymentTxHash Payment transaction hash
     event PaymentRecorded(
         bytes32 indexed classificationId,
         uint256 indexed oracleTokenId,
@@ -94,38 +173,77 @@ contract ZkMLVerificationRegistry is IERC8004 {
         bytes32 paymentTxHash
     );
 
-    // Modifiers
+    // ============ Modifiers ============
+
+    /// @notice Restricts access to agent owner or authorized contracts
+    /// @param tokenId Agent's token ID
     modifier onlyAgentOwner(uint256 tokenId) {
         require(
             _agents[tokenId].owner == msg.sender || authorizedContracts[msg.sender],
-            "Not agent owner or authorized"
+            "Registry: not agent owner or authorized"
         );
         _;
     }
 
+    /// @notice Verifies that an agent exists
+    /// @param tokenId Agent's token ID
     modifier agentExists(uint256 tokenId) {
-        require(_agents[tokenId].owner != address(0), "Agent does not exist");
+        require(_agents[tokenId].owner != address(0), "Registry: agent does not exist");
         _;
     }
 
+    /// @notice Restricts access to contract owner only
     modifier onlyOwner() {
-        require(msg.sender == owner, "Only owner");
+        require(msg.sender == owner, "Registry: caller is not owner");
         _;
     }
 
-    constructor() {
-        owner = msg.sender;
+    /// @notice Restricts access to authorized validators or owner
+    modifier onlyAuthorizedValidator() {
+        require(
+            msg.sender == owner || authorizedValidators[msg.sender],
+            "Registry: not authorized validator"
+        );
+        _;
     }
+
+    // ============ Constructor ============
 
     /**
-     * @notice Authorize a contract to submit proofs on behalf of agents
-     * @param contractAddress The contract address to authorize
+     * @notice Initializes the registry
+     * @dev Sets deployer as owner and initial authorized validator
+     */
+    constructor() {
+        owner = msg.sender;
+        // Owner is automatically authorized as validator
+        authorizedValidators[msg.sender] = true;
+    }
+
+    // ============ Authorization Functions ============
+
+    /**
+     * @notice Authorizes or deauthorizes a contract to submit proofs
+     * @dev Only owner can modify contract authorizations
+     * @param contractAddress Contract address to authorize/deauthorize
      * @param authorized True to authorize, false to revoke
      */
     function authorizeContract(address contractAddress, bool authorized) external onlyOwner {
-        require(contractAddress != address(0), "Invalid address");
+        require(contractAddress != address(0), "Registry: invalid address");
         authorizedContracts[contractAddress] = authorized;
         emit ContractAuthorized(contractAddress, authorized);
+    }
+
+    /**
+     * @notice Authorizes or deauthorizes a validator to record validations
+     * @dev Only owner can modify validator authorizations
+     *      This prevents unauthorized reputation manipulation
+     * @param validator Validator address to authorize/deauthorize
+     * @param authorized True to authorize, false to revoke
+     */
+    function authorizeValidator(address validator, bool authorized) external onlyOwner {
+        require(validator != address(0), "Registry: invalid address");
+        authorizedValidators[validator] = authorized;
+        emit ValidatorAuthorized(validator, authorized);
     }
 
     /**
@@ -183,18 +301,31 @@ contract ZkMLVerificationRegistry is IERC8004 {
     }
 
     /**
-     * @notice Record validation of a classification (manual or automatic)
-     * @param classificationId The classification being validated
-     * @param oracleTokenId The oracle's token ID
+     * @notice Records validation of a classification (manual or automatic)
+     * @dev CRITICAL: Only authorized validators can record validations to prevent reputation manipulation
+     * @param classificationId Unique classification identifier
+     * @param oracleTokenId Oracle's ERC-8004 token ID
      * @param wasCorrect Whether the classification was correct
-     * @param reason Reason for validation
+     * @param reason Validation reason or notes
+     *
+     * Security:
+     * - Only authorized validators can call this function
+     * - Owner is automatically authorized
+     * - Prevents unauthorized reputation manipulation
+     * - Creates immutable audit trail
+     *
+     * Effects:
+     * - Adds validation record to history
+     * - Updates oracle reputation based on correctness
+     * - Emits ValidationRecorded event
+     * - May emit ConsecutiveFailureWarning if threshold reached
      */
     function recordValidation(
         bytes32 classificationId,
         uint256 oracleTokenId,
         bool wasCorrect,
         string calldata reason
-    ) external agentExists(oracleTokenId) {
+    ) external onlyAuthorizedValidator agentExists(oracleTokenId) {
         string memory capabilityType = "news_classification";
 
         // Record validation
@@ -340,8 +471,8 @@ contract ZkMLVerificationRegistry is IERC8004 {
                 "Incorrect prediction"
             );
 
-            // Emit warning for consecutive failures
-            if (capability.consecutiveFailures >= 5) {
+            // Emit warning if consecutive failures reach threshold
+            if (capability.consecutiveFailures >= CONSECUTIVE_FAILURE_WARNING_THRESHOLD) {
                 emit ConsecutiveFailureWarning(
                     tokenId,
                     capabilityType,
