@@ -2,16 +2,76 @@
 
 **Live on Base Mainnet (Chain ID: 8453)**
 
-A production-ready implementation of **ERC-8004 (Verifiable AI Agents)** that combines zero-knowledge machine learning with autonomous on-chain trading.
+A production-ready implementation of **ERC-8004 (Verifiable AI Agents)** integrated with **X402 (HTTP 402 Payment Required)** that combines zero-knowledge machine learning with micropayment-verified autonomous trading.
 
-## Overview
+## What This App Does (Plain English)
+
+Imagine an AI agent that:
+1. **Reads crypto news** every 5 minutes from CoinDesk
+2. **Analyzes sentiment** using a neural network ("Is this bullish or bearish?")
+3. **Proves it did the analysis correctly** using zero-knowledge cryptography
+4. **Posts the analysis on-chain** to Base Mainnet blockchain
+5. **Automatically trades** based on the sentiment (buy ETH if bullish, sell if bearish)
+6. **Tracks its performance** and builds reputation over time
+
+All of this happens autonomously, without human intervention, and everything is verifiable on-chain.
+
+### The ERC-8004 + X402 Synergy (Mutually Reinforcing Relationship)
+
+This app showcases how **ERC-8004** (Verifiable AI Agents) and **X402** (HTTP 402 Payment Required) create a powerful feedback loop:
+
+**ERC-8004** provides:
+- **Agent Identity**: The AI is registered as agent #1 with a reputation score
+- **Capability Tracking**: Records what the agent can do ("news_classification")
+- **Proof Verification**: Validates that the AI's work is cryptographically correct
+- **Reputation System**: Tracks accuracy over time (starts at 100, increases with verified predictions)
+
+**X402** adds:
+- **Payment Verification**: Users pay in USDC for each classification request
+- **Economic Accountability**: Payments create a financial stake in accuracy
+- **Dynamic Pricing**: Price adjusts based on ERC-8004 reputation (better reputation = higher price)
+- **Revenue Stream**: The AI earns money, making it economically sustainable
+
+**The Reinforcing Cycle**:
+```
+Higher Reputation (ERC-8004)
+    ↓
+Higher Price (X402)
+    ↓
+More Revenue
+    ↓
+Better Incentive to Maintain Accuracy
+    ↓
+More Verified Predictions
+    ↓
+Higher Reputation (ERC-8004)
+    ↓
+[CYCLE REPEATS]
+```
+
+**Payment Boosts Reputation**:
+- Free classifications: Base reputation increase
+- Paid classifications (X402): **+5 bonus reputation**
+- This incentivizes the AI to serve paying customers well
+
+**Reputation Sets Price**:
+- Reputation 0-100: $0.15 per classification
+- Reputation 100-200: $0.25
+- Reputation 200-400: $0.50
+- Reputation 400-700: $0.75
+- Reputation 700+: $1.00
+
+So as the AI proves itself (ERC-8004), it earns the right to charge more (X402), which funds continued operation and incentivizes accuracy. This creates a self-sustaining, economically rational AI agent.
+
+## System Architecture
 
 This system demonstrates a complete pipeline from AI inference to blockchain execution:
 
 1. **zkML Classification**: ONNX sentiment model with JOLT zero-knowledge proofs
 2. **On-Chain Verification**: Groth16 proof verification on Base Mainnet
-3. **Autonomous Trading**: ERC-8004 compliant agent that executes trades based on verified classifications
-4. **Real-Time Dashboard**: Live UI showing classifications, trades, and portfolio performance
+3. **X402 Payment Integration**: HTTP 402 micropayments in USDC with reputation-based pricing
+4. **Autonomous Trading**: ERC-8004 compliant agent that executes trades based on verified classifications
+5. **Real-Time Dashboard**: Live UI showing classifications, trades, portfolio, and reputation
 
 ## Live Demo
 
@@ -27,7 +87,7 @@ The system runs continuously:
 
 ## Contract Addresses (Base Mainnet)
 
-**Latest Deployment: October 25, 2025** ✨
+**Latest Deployment: October 27, 2025** ✨
 
 | Contract | Address | Purpose |
 |----------|---------|---------|
@@ -36,7 +96,7 @@ The system runs continuously:
 | **NewsVerifier** | `0xb4c9f9fDEBeD2cB8350E9165Dbd319b14e7cE1Af` | News classification verifier |
 | **ValidationRegistry** | `0x0f556d976FA29f0BF678e2367F5E99fa1261f93e` | ERC-8004 validation registry |
 | **NewsClassificationOracle** | `0xfe47ba256043617f4acaF0c74Af25ba95be61b95` | Oracle with X402 integration |
-| **TradingAgentBase** | `0xD00058CE887ebE9354b6d7E51812DB69d38805EC` | Autonomous trading agent |
+| **TradingAgentBase** | `0xA03cAdb9cfA3CD8048172f1C127706a9B7C88782` | Autonomous trading agent (WORKING) |
 
 **Oracle Token ID**: `1` (ERC-8004 agent registration)
 **Network**: Base Mainnet
