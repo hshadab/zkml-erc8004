@@ -523,7 +523,9 @@ app.get('/api/registry', async (req, res) => {
                 console.error('Error fetching oracle info:', err);
             }
 
-            // Trading agent (token ID 2)
+            // Trading agent (token ID 2) - Only query if it exists
+            // Note: Currently only oracle agent (token ID 1) is registered
+            // The TradingAgent contract doesn't have its own ERC-8004 token
             try {
                 const agentInfo = await registryContract.getAgentInfo(2);
                 const agentReputation = await registryContract.getReputationScore(2, 'autonomous_trading');
@@ -535,7 +537,8 @@ app.get('/api/registry', async (req, res) => {
                     reputation: agentReputation.toString()
                 });
             } catch (err) {
-                console.error('Error fetching agent info:', err);
+                // Token ID 2 doesn't exist yet - this is expected
+                console.log('Trading agent (token ID 2) not registered in ERC-8004 registry (this is normal)');
             }
 
             return { agents };
