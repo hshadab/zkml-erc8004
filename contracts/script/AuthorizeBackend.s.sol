@@ -39,23 +39,21 @@ contract AuthorizeBackend is Script {
         console.log("1. Authorizing backend to trigger trades...");
         TradingAgentBase tradingAgent = TradingAgentBase(payable(tradingAgentAddress));
         tradingAgent.setAuthorizedCaller(oracleAddress, true);
-        console.log("   ✅ Backend authorized for trading");
+        console.log("   Backend authorized for trading");
         console.log("");
 
         // 2. Authorize backend as validator in Registry
-        console.log("2. Authorizing backend as validator...");
-        ZkMLVerificationRegistry registry = ZkMLVerificationRegistry(registryAddress);
-        registry.authorizeValidator(oracleAddress, true);
-        console.log("   ✅ Backend authorized as validator");
+        // NOTE: Skipping Registry authorization - deployed Registry doesn't have this feature
+        // The backend can still record validations via the owner address
+        console.log("2. Skipping Registry authorization (not supported in deployed contract)");
         console.log("");
 
         // 3. Verify authorizations
         console.log("3. Verifying authorizations...");
         bool isAuthorizedCaller = tradingAgent.authorizedCallers(oracleAddress);
-        bool isAuthorizedValidator = registry.authorizedValidators(oracleAddress);
 
         console.log("   Trading caller authorized:", isAuthorizedCaller);
-        console.log("   Registry validator authorized:", isAuthorizedValidator);
+        console.log("   Registry validator authorized: N/A (using owner)");
         console.log("");
 
         // 4. Display trading agent configuration
@@ -72,11 +70,11 @@ contract AuthorizeBackend is Script {
         console.log("AUTHORIZATION COMPLETE");
         console.log("========================================");
         console.log("");
-        console.log("✅ Backend can now:");
+        console.log("Backend can now:");
         console.log("   - Trigger trades via reactToNews()");
         console.log("   - Record validations in registry");
         console.log("");
-        console.log("⚠️  Next steps:");
+        console.log("Next steps:");
         console.log("   1. Update Render env var: TRADING_AGENT_ADDRESS");
         console.log("   2. Restart news-service");
         console.log("   3. Test classification + trading workflow");

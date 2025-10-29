@@ -96,7 +96,7 @@ The system runs continuously:
 | **NewsVerifier** | `0xb4c9f9fDEBeD2cB8350E9165Dbd319b14e7cE1Af` | News classification verifier |
 | **ValidationRegistry** | `0x0f556d976FA29f0BF678e2367F5E99fa1261f93e` | ERC-8004 validation registry |
 | **NewsClassificationOracle** | `0xfe47ba256043617f4acaF0c74Af25ba95be61b95` | Oracle with X402 integration |
-| **TradingAgentBase** | `0xA03cAdb9cfA3CD8048172f1C127706a9B7C88782` | Autonomous trading agent (WORKING) |
+| **TradingAgentBase** | `0xb5331Ca7A48EAb6591fF04A7527e72B3B6E280cf` | Secure autonomous trading agent with access control, slippage protection, Chainlink oracles, and stop-loss |
 
 **Oracle Token ID**: `1` (ERC-8004 agent registration)
 **Network**: Base Mainnet

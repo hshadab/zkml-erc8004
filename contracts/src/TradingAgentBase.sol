@@ -299,8 +299,9 @@ contract TradingAgentBase {
         stopLossBps = 1000; // 10% default stop-loss
         isPaused = false;
 
-        // Set initial portfolio value for stop-loss tracking
-        initialPortfolioValue = _calculatePortfolioValue();
+        // Set initial portfolio value to 0 - will be set via resetInitialPortfolioValue() after funding
+        // Cannot call _calculatePortfolioValue() here as it uses external calls during construction
+        initialPortfolioValue = 0;
 
         // Owner is automatically authorized
         authorizedCallers[msg.sender] = true;
